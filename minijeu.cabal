@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 1af740edbae72680cfae6b3fda38feece0bf987e02eeca26c817e60f2567900c
+-- hash: 98bf3f75b8fb99533128de5e0697af12ecd9205f98dda0d51d92b9a92a4d158f
 
 name:           minijeu
 version:        0.1.0.0
@@ -27,8 +27,9 @@ source-repository head
 
 library
   exposed-modules:
+      Behavior
+      Carte
       Keyboard
-      Model
       Sprite
       SpriteMap
       TextureMap
