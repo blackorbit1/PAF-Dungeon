@@ -1,10 +1,15 @@
 
-module Model where
+module Behavior where
 
 import SDL
 
+
 import System.Random
 import qualified System.Random as R
+
+
+import Carte (Carte)
+import qualified Carte as C
 
 import System.IO.Unsafe -- HAHA
 
@@ -24,6 +29,17 @@ data GameState = GameState { persoX :: Int
 -- y = R.randomRIO(0, 380)
 initGameState :: Int -> Int -> GameState
 initGameState x y = GameState 0 0 5 x y False
+
+data Modele = Cont  { carte :: C.Carte        -- carte actuelle
+                    --, envi :: Envi          -- environnement actuel
+                    --, gene :: StdGen        -- generateur aleatoire
+                    --, log :: String         -- journal du tour
+                    --, keyboard :: Keyboard  -- l’etat du clavier 
+                    --, win :: Bool           -- gagné !
+                    }
+
+initModele :: C.Carte -> Modele
+initModele carte = Cont carte
 
 moveLeft :: GameState -> GameState
 moveLeft gs@(GameState px _ sp _ _ _) | px > 0 = gs { persoX = px - sp }
