@@ -1,6 +1,10 @@
 module Carte where
 import qualified Data.Map.Strict as M
 
+import Environnement
+import qualified Environnement as E
+
+
 data PDirection = NS | EO deriving Eq -- direction d’une porte
 
 data StatutP = Ouverte | Fermee deriving Eq -- statut d’une porte
@@ -26,7 +30,7 @@ data Carte = Carte {
     }
 
 instance Read Carte where
-    readsPrec _ x = [((createCarte x), "")]
+    readsPrec _ x = [((createCarte (reverse x)), "")]
 
 
 instance Show Carte where
@@ -38,7 +42,34 @@ instance Show Carte where
 class ToString a where
     toString :: a -> String
 
+getCase :: Coord -> Carte -> Maybe Case
+getCase coord carte = M.lookup coord (carte_contenu carte)
 
+isTraversable :: Case -> Entite -> Bool  
+isTraversable ca ent =
+    case ca of
+        Normal -> (clearanceLevel ent) >= 1
+        Entree -> (clearanceLevel ent) >= 1
+        Sortie -> (clearanceLevel ent) >= 1
+        Porte _ Ouverte ->  (clearanceLevel ent) >= 10
+        Piege  ->           (clearanceLevel ent) >= 20
+        Porte _ Fermee ->   (clearanceLevel ent) >= 30
+        Mur -> (clearanceLevel ent) >= 40
+        
+editCase :: Coord -> Case -> Carte -> Carte
+editCase coord ca carte = Carte (carteh carte) (cartel carte) (M.insert coord ca (carte_contenu carte))
+
+openDoor :: Coord -> Carte -> Carte
+openDoor coord carte = case getCase coord carte of 
+    Just (Porte NS _) -> editCase coord (Porte NS Ouverte) carte
+    Just (Porte EO _) -> editCase coord (Porte EO Ouverte) carte
+
+closeDoor :: Coord -> Carte -> Carte
+closeDoor coord carte = case getCase coord carte of 
+    Just (Porte NS _) -> editCase coord (Porte NS Fermee) carte
+    Just (Porte EO _) -> editCase coord (Porte EO Fermee) carte
+
+    
 caseFromChar :: Char -> Case
 caseFromChar caractere = case caractere of
     ' ' -> Normal
@@ -69,24 +100,11 @@ createCarteAux caractere c@(Carte {cartel = cl, carteh = ch, carte_contenu = cc}
 
 createCarte :: String -> Carte
 createCarte texte = foldr createCarteAux (Carte (-1) 0 M.empty) texte
--- utiliser foldr
 
-{-
-compteLettre :: T.Text -> Int
-compteLettre t = T.foldl compteLettreAux 0 t
-
-    >>= (\_ -> putStrLn ("Nombre de caractères " ++ (show $ compteLettre texte) ++ "\n"))
-
-
-mainEtParse (titre:_) = (TIO.readFile $ "texte.txt") >>= (\t -> analyse t titre)
-
-
-
-
--}
 
 toStringCarteAux :: Int -> (Coord, Case) -> String
-toStringCarteAux lar (co, ca) = if (cx co) == lar then (strFromCase ca) ++ "\n" else (strFromCase ca)
+toStringCarteAux lar (co, ca) = if (cx co) == (max 0 (lar - 1)) then (strFromCase ca) ++ "\n" else (strFromCase ca)
+
 
 
 

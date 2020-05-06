@@ -33,6 +33,7 @@ library
       Sprite
       SpriteMap
       TextureMap
+      Environnement
   other-modules:
       Paths_minijeu
   hs-source-dirs:

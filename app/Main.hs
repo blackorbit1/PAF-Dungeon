@@ -115,6 +115,9 @@ main = do
   -- initialisation de l'état du clavier
   let kbd = K.createKeyboard
   -- lancement de la gameLoop
+
+  putStrLn (show (M.carte modele))
+
   gameLoop 60 renderer tmap' smap' kbd gameState modele
 
 {-
@@ -186,6 +189,7 @@ gameLoop frameRate renderer tmap smap kbd gameState modele = do
           _         -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "mur") smap) (fromIntegral (50 * (cx co))) (fromIntegral (50 * (cy co))))
           ))
     (Map.assocs (carte_contenu (M.carte modele))) -- est ce que c'est vraiment M.Carte ?
+  
   
 
   present renderer
