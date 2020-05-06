@@ -109,7 +109,7 @@ main = do
   x <- R.randomRIO(0, 540)
   y <- R.randomRIO(0, 380)
   let gameState = M.initGameState x y 
-  texte <- (readFile $ "map1.txt")
+  texte <- (readFile $ "maps/map1.txt")
   let modele = M.initModele (read texte)
 -- y = R.randomRIO(0, 380)
   -- initialisation de l'état du clavier
@@ -182,9 +182,10 @@ gameLoop frameRate renderer tmap smap kbd gameState modele = do
   -}
 
   mapM_ (\(co, ca) -> (case ca of
-          C.Normal  -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "sol") smap) (fromIntegral (cx co)) (fromIntegral (cy co)))
-          _         -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "mur") smap) (fromIntegral (cx co)) (fromIntegral (cy co)))
-    (Map.assocs (carte_contenu (carte modele)))
+          C.Normal  -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "sol") smap) (fromIntegral (50 * (cx co))) (fromIntegral (50 * (cy co))))
+          _         -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "mur") smap) (fromIntegral (50 * (cx co))) (fromIntegral (50 * (cy co))))
+          ))
+    (Map.assocs (carte_contenu (M.carte modele))) -- est ce que c'est vraiment M.Carte ?
   
 
   present renderer
@@ -199,6 +200,6 @@ gameLoop frameRate renderer tmap smap kbd gameState modele = do
   --- update du game state
   let gameState' = M.gameStep (M.checkDead gameState) kbd' deltaTime
   ---
-  unless (K.keypressed KeycodeEscape kbd') (gameLoop frameRate renderer tmap smap kbd' gameState')
+  unless (K.keypressed KeycodeEscape kbd') (gameLoop frameRate renderer tmap smap kbd' gameState' modele)
 
 
