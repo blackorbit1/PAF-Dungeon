@@ -9,6 +9,9 @@ import qualified Data.Set as Set
 
 import Data.List (foldl')
 
+import Data.Map.Strict (Map)
+import qualified Data.Map.Strict as Map
+
 import Foreign.C.Types (CInt (..) )
 
 
@@ -105,29 +108,44 @@ main = do
   -- initialisation de l'état du jeu
   x <- R.randomRIO(0, 540)
   y <- R.randomRIO(0, 380)
-  --let gameState = M.initGameState x y (read (TIO.readFile $ "texte.txt"))
+  let gameState = M.initGameState x y 
   texte <- (readFile $ "map1.txt")
-  let modele = B.initModele (read texte)
+  let modele = M.initModele (read texte)
 -- y = R.randomRIO(0, 380)
   -- initialisation de l'état du clavier
   let kbd = K.createKeyboard
   -- lancement de la gameLoop
-  gameLoop 60 renderer tmap' smap' kbd modele
+  gameLoop 60 renderer tmap' smap' kbd gameState modele
 
-displayObjectAsSprite :: C.Case -> Int -> Int -> IO ()
-displayObjectAsSprite objet x y = case objet of 
-  C.Normal  -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "sol") smap) x y)
-  _         -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "mur") smap) x y)
+{-
+data RendererInfos = RendererInfos  { renderer :: Renderer
+                                    , tmap :: TextureMap
+                                    , smap :: SpriteMap }
 
-displayCarteAux :: () -> (k, a) -> IO ()
-displayCarteAux _ (C.Coord co, ca) = displayObjectAsSprite ca (x co) (y co)
-
-displayCarte :: C.Carte -> IO ()
-displayCarte carte = foldr displayCarteAux () (assocs (carte_contenu carte))
+initRendererInfos :: Renderer -> TextureMap -> SpriteMap -> RendererInfos
+initRendererInfos renderer tmap smap = RendererInfos renderer tmap smap
 
 
-gameLoop :: (RealFrac a, Show a) => a -> Renderer -> TextureMap -> SpriteMap -> Keyboard -> M.Modele -> IO ()
-gameLoop frameRate renderer tmap smap kbd modele = do
+
+displayObjectAsSprite :: RendererInfos -> C.Case -> CInt -> CInt -> RendererInfos
+displayObjectAsSprite r objet x y = do
+  startTime <- time
+  perdu <- case objet of 
+    C.Normal  -> S.displaySprite (renderer r) (tmap r) (S.moveTo (SM.fetchSprite (SpriteId "sol") (smap r)) x y)
+    _         -> S.displaySprite (renderer r) (tmap r) (S.moveTo (SM.fetchSprite (SpriteId "mur") (smap r)) x y)
+  return r
+
+displayCarteAux :: RendererInfos -> (Coord, Case) -> RendererInfos
+displayCarteAux renderer (co, ca) = displayObjectAsSprite renderer ca (fromIntegral (cx co)) (fromIntegral (cy co)) -- >>= ( \ _ -> renderer)
+
+displayCarte :: RendererInfos -> C.Carte -> RendererInfos
+displayCarte renderer carte = foldr displayCarteAux renderer (Map.assocs (carte_contenu carte))
+
+-}
+
+
+gameLoop :: (RealFrac a, Show a) => a -> Renderer -> TextureMap -> SpriteMap -> Keyboard -> GameState -> M.Modele -> IO ()
+gameLoop frameRate renderer tmap smap kbd gameState modele = do
   startTime <- time
   events <- pollEvents
   let kbd' = K.handleEvents events kbd
@@ -143,6 +161,8 @@ gameLoop frameRate renderer tmap smap kbd modele = do
                                  (fromIntegral (M.persoY gameState)))
   --- display virus
 
+
+
   if (M.win gameState)
     then S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "Deadvirus") smap)
                                  (fromIntegral (M.virusX gameState))
@@ -152,8 +172,20 @@ gameLoop frameRate renderer tmap smap kbd modele = do
                                  (fromIntegral (M.virusY gameState)))
 
 
-  displayCarte (carte modele)
+  -- displayCarte (initRendererInfos renderer tmap smap) (carte modele)
 
+  {-
+  fmap (\(co, ca) -> (case ca of
+          C.Normal  -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "sol") smap) (fromIntegral (cx co)) (fromIntegral (cy co))) >>= ( \ _ -> (co, ca))
+          _         -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "mur") smap) (fromIntegral (cx co)) (fromIntegral (cy co))) >>= ( \ _ -> (co, ca)) ))
+    (Map.assocs (carte_contenu (carte modele)))
+  -}
+
+  mapM_ (\(co, ca) -> (case ca of
+          C.Normal  -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "sol") smap) (fromIntegral (cx co)) (fromIntegral (cy co)))
+          _         -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "mur") smap) (fromIntegral (cx co)) (fromIntegral (cy co)))
+    (Map.assocs (carte_contenu (carte modele)))
+  
 
   present renderer
   endTime <- time
@@ -168,3 +200,5 @@ gameLoop frameRate renderer tmap smap kbd modele = do
   let gameState' = M.gameStep (M.checkDead gameState) kbd' deltaTime
   ---
   unless (K.keypressed KeycodeEscape kbd') (gameLoop frameRate renderer tmap smap kbd' gameState')
+
+

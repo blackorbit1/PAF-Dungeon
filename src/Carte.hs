@@ -51,6 +51,18 @@ caseFromChar caractere = case caractere of
     'E' -> Entree
     'S' -> Sortie
 
+strFromCase :: Case -> String
+strFromCase ca = case ca of
+    Normal -> " "
+    Porte EO Fermee -> "|"
+    Porte NS Fermee -> "-"
+    Porte EO Ouverte -> "/"
+    Porte NS Ouverte -> "_"
+    Piege -> "o"
+    Mur -> "X"
+    Entree -> "E"
+    Sortie -> "S"
+
 createCarteAux :: Char -> Carte -> Carte
 createCarteAux '\n' c@(Carte {cartel = cl, carteh = ch, carte_contenu = cc}) = c {cartel = -1, carteh = ch + 1, carte_contenu = cc}
 createCarteAux caractere c@(Carte {cartel = cl, carteh = ch, carte_contenu = cc}) = c {cartel = cl + 1, carteh = ch, carte_contenu = M.insert (Coord (cl + 1) ch) (caseFromChar caractere) cc }
@@ -71,16 +83,15 @@ mainEtParse (titre:_) = (TIO.readFile $ "texte.txt") >>= (\t -> analyse t titre)
 
 
 
-
-toStringCarteAux :: String -> Coord Case -> String
-toStringCarteAux n (co ca) = n -- On consière que les retour chariots ne sont pas des caractères
-toStringCarteAux n _ = n ++ '\n'
-
-
 -}
 
+toStringCarteAux :: Int -> (Coord, Case) -> String
+toStringCarteAux lar (co, ca) = if (cx co) == lar then (strFromCase ca) ++ "\n" else (strFromCase ca)
+
+
+
 instance ToString Carte where
-    toString _ = "nous n'avons pas reussi à afficher la carte" -- foldl (\x -> toStringCarteAux x ) "" c.carte_contenu
+    toString c = foldl (\accstr cur -> accstr ++ (toStringCarteAux (cartel c) cur) ) "" (M.assocs (carte_contenu c) )
 
 
 
