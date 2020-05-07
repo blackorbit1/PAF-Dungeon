@@ -126,14 +126,14 @@ main = do
   x <- R.randomRIO(0, 540)
   y <- R.randomRIO(0, 380)
   let gameState = M.initGameState x y 
-  texte <- (readFile $ "maps/map1.txt")
+  texte <- (readFile $ "maps/map2.txt")
   let modele = M.initModele (read texte)
 -- y = R.randomRIO(0, 380)
   -- initialisation de l'état du clavier
   let kbd = K.createKeyboard
   -- lancement de la gameLoop
 
-  putStrLn (show (M.carte modele))
+  putStrLn (show (C.listFromCarte (M.carte modele)))
 
   gameLoop 60 renderer tmap' smap' kbd gameState modele
 
@@ -185,8 +185,8 @@ gameLoop frameRate renderer tmap smap kbd gameState modele = do
   -}
   
   mapM_ ( \ (co, ca) -> (do
-    let x = (fromIntegral (50 * (cx co))) 
-    let y = (fromIntegral (50 * (cy co)))
+    let x = (fromIntegral (50 * ((cartel (M.carte modele)) * 0 + (cx co)))) 
+    let y = (fromIntegral (50 * ((carteh (M.carte modele)) * 0 + (cy co))))
     case ca of
           C.Normal              -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "sol") smap) x y)
           C.Mur                 -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "mur") smap) x y)
