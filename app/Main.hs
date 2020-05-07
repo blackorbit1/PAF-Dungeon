@@ -44,33 +44,6 @@ import Carte
 import qualified Carte as C
 
 
-loadBackground :: Renderer-> FilePath -> TextureMap -> SpriteMap -> IO (TextureMap, SpriteMap)
-loadBackground rdr path tmap smap = do
-  tmap' <- TM.loadTexture rdr path (TextureId "background") tmap
-  let sprite = S.defaultScale $ S.addImage S.createEmptySprite $ S.createImage (TextureId "background") (S.mkArea 0 0 640 480)
-  let smap' = SM.addSprite (SpriteId "background") sprite smap
-  return (tmap', smap')
-
-loadPerso :: Renderer-> FilePath -> TextureMap -> SpriteMap -> IO (TextureMap, SpriteMap)
-loadPerso rdr path tmap smap = do
-  tmap' <- TM.loadTexture rdr path (TextureId "perso") tmap
-  let sprite = S.defaultScale $ S.addImage S.createEmptySprite $ S.createImage (TextureId "perso") (S.mkArea 0 100 100 100)
-  let smap' = SM.addSprite (SpriteId "perso") sprite smap
-  return (tmap', smap')
-
-loadVirus :: Renderer-> FilePath -> TextureMap -> SpriteMap -> IO (TextureMap, SpriteMap)
-loadVirus rdr path tmap smap = do
-  tmap' <- TM.loadTexture rdr path (TextureId "virus") tmap
-  let sprite = S.defaultScale $ S.addImage S.createEmptySprite $ S.createImage (TextureId "virus") (S.mkArea 0 0 100 100)
-  let smap' = SM.addSprite (SpriteId "virus") sprite smap
-  return (tmap', smap')
-
-loadDVirus :: Renderer-> FilePath -> TextureMap -> SpriteMap -> IO (TextureMap, SpriteMap)
-loadDVirus rdr path tmap smap = do
-  tmap' <- TM.loadTexture rdr path (TextureId "Deadvirus") tmap
-  let sprite = S.defaultScale $ S.addImage S.createEmptySprite $ S.createImage (TextureId "Deadvirus") (S.mkArea 0 0 100 100)
-  let smap' = SM.addSprite (SpriteId "Deadvirus") sprite smap
-  return (tmap', smap')
 
 
 loadMur :: Renderer-> FilePath -> TextureMap -> SpriteMap -> IO (TextureMap, SpriteMap)
@@ -87,6 +60,50 @@ loadSol rdr path tmap smap = do
   let smap' = SM.addSprite (SpriteId "sol") sprite smap
   return (tmap', smap')
 
+loadPorEOFer :: Renderer-> FilePath -> TextureMap -> SpriteMap -> IO (TextureMap, SpriteMap)
+loadPorEOFer rdr path tmap smap = do
+  tmap' <- TM.loadTexture rdr path (TextureId "porte_fermee_eo") tmap
+  let sprite = S.defaultScale $ S.addImage S.createEmptySprite $ S.createImage (TextureId "porte_fermee_eo") (S.mkArea 0 0 50 50)
+  let smap' = SM.addSprite (SpriteId "porte_fermee_eo") sprite smap
+  return (tmap', smap')
+
+loadPorEOOuv :: Renderer-> FilePath -> TextureMap -> SpriteMap -> IO (TextureMap, SpriteMap)
+loadPorEOOuv rdr path tmap smap = do
+  tmap' <- TM.loadTexture rdr path (TextureId "porte_ouverte_eo") tmap
+  let sprite = S.defaultScale $ S.addImage S.createEmptySprite $ S.createImage (TextureId "porte_ouverte_eo") (S.mkArea 0 0 50 50)
+  let smap' = SM.addSprite (SpriteId "porte_ouverte_eo") sprite smap
+  return (tmap', smap')
+
+loadPorNSFer :: Renderer-> FilePath -> TextureMap -> SpriteMap -> IO (TextureMap, SpriteMap)
+loadPorNSFer rdr path tmap smap = do
+  tmap' <- TM.loadTexture rdr path (TextureId "porte_fermee_ns") tmap
+  let sprite = S.defaultScale $ S.addImage S.createEmptySprite $ S.createImage (TextureId "porte_fermee_ns") (S.mkArea 0 0 50 50)
+  let smap' = SM.addSprite (SpriteId "porte_fermee_ns") sprite smap
+  return (tmap', smap')
+
+loadPorNSOuv :: Renderer-> FilePath -> TextureMap -> SpriteMap -> IO (TextureMap, SpriteMap)
+loadPorNSOuv rdr path tmap smap = do
+  tmap' <- TM.loadTexture rdr path (TextureId "porte_ouverte_ns") tmap
+  let sprite = S.defaultScale $ S.addImage S.createEmptySprite $ S.createImage (TextureId "porte_ouverte_ns") (S.mkArea 0 0 50 50)
+  let smap' = SM.addSprite (SpriteId "porte_ouverte_ns") sprite smap
+  return (tmap', smap')
+
+loadEntrance :: Renderer-> FilePath -> TextureMap -> SpriteMap -> IO (TextureMap, SpriteMap)
+loadEntrance rdr path tmap smap = do
+  tmap' <- TM.loadTexture rdr path (TextureId "entrance") tmap
+  let sprite = S.defaultScale $ S.addImage S.createEmptySprite $ S.createImage (TextureId "entrance") (S.mkArea 0 0 50 50)
+  let smap' = SM.addSprite (SpriteId "entrance") sprite smap
+  return (tmap', smap')
+
+loadExit :: Renderer-> FilePath -> TextureMap -> SpriteMap -> IO (TextureMap, SpriteMap)
+loadExit rdr path tmap smap = do
+  tmap' <- TM.loadTexture rdr path (TextureId "exit") tmap
+  let sprite = S.defaultScale $ S.addImage S.createEmptySprite $ S.createImage (TextureId "exit") (S.mkArea 0 0 50 50)
+  let smap' = SM.addSprite (SpriteId "exit") sprite smap
+  return (tmap', smap')
+
+  
+
 
 
 main :: IO ()
@@ -94,16 +111,16 @@ main = do
   initializeAll
   window <- createWindow "PafDungeon" $ defaultWindow { windowInitialSize = V2 640 480 }
   renderer <- createRenderer window (-1) defaultRenderer
-  -- chargement de l'image du fond
-  (tmap, smap) <- loadBackground renderer "assets/background.jpg" TM.createTextureMap SM.createSpriteMap
-  -- chargement du personnage
-  (tmap', smap') <- loadPerso renderer "assets/perso.png" tmap smap
-  -- chargement du virus
-  (tmap', smap') <- loadVirus renderer "assets/virus.png" tmap' smap'
-  (tmap', smap') <- loadDVirus renderer "assets/Deadvirus.png" tmap' smap'
 
-  (tmap', smap') <- loadMur renderer "assets/mur.png" tmap' smap'
+
+  (tmap', smap') <- loadMur renderer "assets/mur.png" TM.createTextureMap SM.createSpriteMap
   (tmap', smap') <- loadSol renderer "assets/sol.png" tmap' smap'
+  (tmap', smap') <- loadPorEOFer renderer "assets/porte_fermee_eo.png" tmap' smap'
+  (tmap', smap') <- loadPorNSFer renderer "assets/porte_fermee_ns.png" tmap' smap'
+  (tmap', smap') <- loadPorEOOuv renderer "assets/porte_ouverte_eo.png" tmap' smap'
+  (tmap', smap') <- loadPorNSOuv renderer "assets/porte_ouverte_ns.png" tmap' smap'
+  (tmap', smap') <- loadEntrance renderer "assets/entrance.png" tmap' smap'
+  (tmap', smap') <- loadExit renderer "assets/exit.png" tmap' smap'
   
   -- initialisation de l'état du jeu
   x <- R.randomRIO(0, 540)
@@ -154,40 +171,33 @@ gameLoop frameRate renderer tmap smap kbd gameState modele = do
   let kbd' = K.handleEvents events kbd
   clear renderer
 
-  --- display background
-  S.displaySprite renderer tmap (SM.fetchSprite (SpriteId "background") smap)
-
-
-  --- display perso 
-  S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "perso") smap)
-                                 (fromIntegral (M.persoX gameState))
-                                 (fromIntegral (M.persoY gameState)))
-  --- display virus
-
-
-
-  if (M.win gameState)
-    then S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "Deadvirus") smap)
-                                 (fromIntegral (M.virusX gameState))
-                                 (fromIntegral (M.virusY gameState)))
-    else S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "virus") smap)
-                                 (fromIntegral (M.virusX gameState))
-                                 (fromIntegral (M.virusY gameState)))
+  
 
 
   -- displayCarte (initRendererInfos renderer tmap smap) (carte modele)
 
   {-
-  fmap (\(co, ca) -> (case ca of
-          C.Normal  -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "sol") smap) (fromIntegral (cx co)) (fromIntegral (cy co))) >>= ( \ _ -> (co, ca))
-          _         -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "mur") smap) (fromIntegral (cx co)) (fromIntegral (cy co))) >>= ( \ _ -> (co, ca)) ))
-    (Map.assocs (carte_contenu (carte modele)))
-  -}
-
   mapM_ (\(co, ca) -> (case ca of
           C.Normal  -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "sol") smap) (fromIntegral (50 * (cx co))) (fromIntegral (50 * (cy co))))
           _         -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "mur") smap) (fromIntegral (50 * (cx co))) (fromIntegral (50 * (cy co))))
           ))
+    (Map.assocs (carte_contenu (M.carte modele))) -- est ce que c'est vraiment M.Carte ?
+  -}
+  
+  mapM_ ( \ (co, ca) -> (do
+    let x = (fromIntegral (50 * (cx co))) 
+    let y = (fromIntegral (50 * (cy co)))
+    case ca of
+          C.Normal              -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "sol") smap) x y)
+          C.Mur                 -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "mur") smap) x y)
+          C.Porte NS Ouverte  -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "porte_ouverte_ns") smap) x y)
+          C.Porte NS Fermee   -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "porte_fermee_ns") smap) x y)
+          C.Porte EO Ouverte  -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "porte_ouverte_eo") smap) x y)
+          C.Porte EO Fermee   -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "porte_fermee_eo") smap) x y)
+          C.Entree              -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "entrance") smap) x y)
+          C.Sortie              -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "exit") smap) x y)
+          _                     -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "mur") smap) x y)
+    ))
     (Map.assocs (carte_contenu (M.carte modele))) -- est ce que c'est vraiment M.Carte ?
   
   

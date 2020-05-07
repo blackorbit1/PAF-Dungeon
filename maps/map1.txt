@@ -1,6 +1,10 @@
-XXXXXXXX
-X XXX  X
-X      X
-X      X
-X      X
-XXXXXXXX
+XXXXXXXXXX
+XS   /   X
+X  XXXX  X
+X  X   X X
+X  XXX^X X
+X X_X    X
+X      X X
+XXXXXXXX X
+XE  |    X
+XXXXXXXXXX

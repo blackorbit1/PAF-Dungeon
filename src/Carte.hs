@@ -74,9 +74,9 @@ caseFromChar :: Char -> Case
 caseFromChar caractere = case caractere of
     ' ' -> Normal
     '|' -> Porte EO Fermee
-    '-' -> Porte NS Fermee
+    '_' -> Porte NS Fermee
     '/' -> Porte EO Ouverte
-    '_' -> Porte NS Ouverte
+    '^' -> Porte NS Ouverte
     'o' -> Piege
     'X' -> Mur
     'E' -> Entree
