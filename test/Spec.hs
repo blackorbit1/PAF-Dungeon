@@ -5,7 +5,10 @@ main :: IO ()
 --main = putStrLn "Test suite not yet implemented"
 main = hspec $ do
     -- carte
-    CS.carteSpec
+    CS.carteCoordInBoundsSpec
+    CS.carteAllCaseExistsSpec
+    CS.carteEntranceExitSpec
+    CS.carteSurroundedByWallsSpec
 
 
 

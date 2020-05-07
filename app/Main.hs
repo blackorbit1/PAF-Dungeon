@@ -126,14 +126,17 @@ main = do
   x <- R.randomRIO(0, 540)
   y <- R.randomRIO(0, 380)
   let gameState = M.initGameState x y 
-  texte <- (readFile $ "maps/map2.txt")
+  texte <- (readFile $ "maps/map3.txt")
   let modele = M.initModele (read texte)
 -- y = R.randomRIO(0, 380)
   -- initialisation de l'état du clavier
   let kbd = K.createKeyboard
   -- lancement de la gameLoop
 
-  putStrLn (show (C.listFromCarte (M.carte modele)))
+  --putStrLn (show (listFromCarte (M.carte modele)))
+  putStrLn (show (M.carte modele))
+
+  putStrLn ("surroundedByWalls_inv : " ++ (show (C.surroundedByWalls_inv (read texte))))
 
   gameLoop 60 renderer tmap' smap' kbd gameState modele
 

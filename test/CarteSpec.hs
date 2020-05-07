@@ -34,12 +34,52 @@ prop_genTruc_inv = forAll genTrucFree $ truc_inv
 --allCoordsInBounds_inv :: Carte -> Bool
 
 genCarte :: Gen Carte
-genCarte = pure (read "XXX\nX X\nXXX\n")
+genCarte = pure (read   "XXXXX\n\
+                        \X S X\n\
+                        \X   X\n\
+                        \XE  X\n\
+                        \XXXXX"  )
 
-carteSpec = do
-  describe "Validité des cartes chargées" $ do
-    it "vérifie que toutes les coordonnées de la carte correspondent à une case" $
-      property prop_genCarte_inv
 
-prop_genCarte_inv :: Property
-prop_genCarte_inv = forAll genCarte $ allCoordsInBounds_inv
+
+carteCoordInBoundsSpec = do
+  describe "carteCoordInBounds : " $ do
+    it "verifie que toutes les coordonnees de la carte correspondent a une case" $
+      property prop_carteCoordInBounds_inv
+
+prop_carteCoordInBounds_inv :: Property
+prop_carteCoordInBounds_inv = forAll genCarte $ allCoordsInBounds_inv
+
+
+
+
+carteAllCaseExistsSpec = do
+  describe "AllCoordInCarteCarte : " $ do
+    it "verifie que toutes les coordonnees entre la hauteur et la largeur donnent vers une case dans la carte" $
+      property prop_AllCoordInCarteCarte_inv
+
+prop_AllCoordInCarteCarte_inv :: Property
+prop_AllCoordInCarteCarte_inv = forAll genCarte $ allCoordInCarte_inv
+
+
+
+carteEntranceExitSpec = do
+  describe "entranceExit : " $ do
+    it "verifie que toutes la carte contient une seule entree et une seule sortie" $
+      property prop_AllCoordInCarteCarte_inv
+
+prop_entranceExitCarte_inv :: Property
+prop_entranceExitCarte_inv = forAll genCarte $ entranceExit_inv
+
+
+
+carteSurroundedByWallsSpec = do
+  describe "surroundedByWalls : " $ do
+    it "verifie que les bordures de la carte sont des murs" $
+      property prop_surroundedByWallsCarte_inv
+
+prop_surroundedByWallsCarte_inv :: Property
+prop_surroundedByWallsCarte_inv = forAll genCarte $ surroundedByWalls_inv
+
+
+

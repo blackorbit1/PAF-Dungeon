@@ -41,9 +41,12 @@ data Carte = Carte {
 instance Ord Coord where
     --(<=) :: Coord -> Coord -> Ordering
     --c1 <= c2 = (cy c1) <= (cy c2) || (((cy c1) == (cy c2)) && ((cx c1) <= (cx c2)))
-    compare c1 c2   | (cy c1) <= (cy c2) = LT
-                    | otherwise = if (cx c1) <= (cx c2) then LT else GT
-
+    compare c1 c2
+        | (cy c1) < (cy c2) = LT
+        | ((cy c1) == (cy c2)) && ((cx c1) < (cx c2)) = LT
+        | ((cy c1) == (cy c2)) && ((cx c1) == (cx c2)) = EQ
+        | otherwise = GT
+--CA MARCHE
 
 --foo x y | first_name x /= first_name y = EQ
 --        | otherwise                   = (comparing last_name) x y
@@ -55,7 +58,7 @@ instance Read Carte where
 
 createCarteAux :: Carte -> Char -> Carte
 createCarteAux c@(Carte {cartel = cl, carteh = ch, carte_contenu = cc}) '\n' = c {cartel = 0, carteh = ch + 1, carte_contenu = cc}
-createCarteAux c@(Carte {cartel = cl, carteh = ch, carte_contenu = cc}) caractere = c {cartel = cl + 1, carteh = ch, carte_contenu = M.insert (Coord (cl) ch) (caseFromChar caractere) cc }
+createCarteAux c@(Carte {cartel = cl, carteh = ch, carte_contenu = cc}) caractere = c {cartel = cl + 1, carteh = ch, carte_contenu = M.insert (Coord (cl) (ch - 1)) (caseFromChar caractere) cc }
 
 
 {-
@@ -70,12 +73,8 @@ cy         0  0  0      1
 -}
 
 
-[(Coord {cx = 0, cy = 2},Mur),(Coord {cx = 1, cy = 1},Normal),(Coord {cx = 0, cy = 1},Mur),
-(Coord {cx = 1, cy = 2},Mur),(Coord {cx = 2, cy = 0},Mur),(Coord {cx = 1, cy = 0},Mur),
-(Coord {cx = 0, cy = 0},Mur),(Coord {cx = 2, cy = 2},Mur),(Coord {cx = 2, cy = 1},Mur)]
-
 createCarte :: String -> Carte
-createCarte texte = foldl createCarteAux (Carte 0 0 M.empty) texte
+createCarte texte = foldl createCarteAux (Carte 0 1 M.empty) texte
 
 
 
@@ -94,7 +93,9 @@ instance ToString Carte where
     --toString c = foldl (\accstr cur -> accstr ++ (toStringCarteAux (cartel c) cur) ) "" (M.assocs (carte_contenu c) )
     --toString c = foldl (\accstr cur -> accstr ++ (toStringCarteAux (cartel c) cur) ) "" (sortBy (comparing getCoord) (M.assocs (carte_contenu c) ))
     --toString c = show (M.assocs (carte_contenu c))
-    toString c = foldl (\accstr cur -> accstr ++ (toStringCarteAux (cartel c) cur) ) "" (listFromCarte c)
+    toString c = "largeur = " ++ (show (cartel c)) ++
+                "\nhauteur = " ++ (show (carteh c)) ++ "\n" ++
+                foldl (\accstr cur -> accstr ++ (toStringCarteAux (cartel c) cur) ) "" (listFromCarte c)
 
 
 
@@ -120,7 +121,7 @@ strFromCase ca = case ca of
     Porte EO Fermee -> "|"
     Porte NS Fermee -> "-"
     Porte EO Ouverte -> "/"
-    Porte NS Ouverte -> "_"
+    Porte NS Ouverte -> "^"
     Piege -> "o"
     Mur -> "X"
     Entree -> "E"
@@ -172,6 +173,7 @@ prop_revrev :: Eq a => [a] -> [a] -> Bool
 prop_revrev xs ys = reverse (xs <> ys) == reverse ys <> reverse xs
 -}
 
+-------
 
 coordInBounds :: Coord -> Int -> Int -> Bool
 coordInBounds co larg haut = ( ( (cx co) < larg ) 
@@ -179,15 +181,50 @@ coordInBounds co larg haut = ( ( (cx co) < larg )
 
 
 allCoordsInBounds_inv :: Carte -> Bool
-allCoordsInBounds_inv carte = foldl (\boolAcc (co,_) -> boolAcc && coordInBounds co (cartel carte) (carteh carte) ) True (M.assocs (carte_contenu carte) )
+allCoordsInBounds_inv carte = foldl (\boolAcc (co,_) -> boolAcc && coordInBounds co (cartel carte) (carteh carte) ) True (listFromCarte carte)
 
-{-
-caseExists :: Int -> Int -> Carte -> Bool
-caseExists x y = case (M.lookup (Coord x y) (carte_contenu carte) ) of
-                Just _ -> True
-                Nothing -> False
+-------
 
-allCaseExists_inv :: Carte -> Bool
-caseExists_inv carte = 
+coordInCarte :: Coord -> Carte -> Bool
+coordInCarte coord carte = case (getCase coord carte) of
+                    Just _ -> True
+                    Nothing -> False
 
--}
+allCoordInCarte_inv :: Carte -> Bool
+-- allCoordInCarte_inv carte | (cartel carte) != 0 && (carteh carte) != 0 
+allCoordInCarte_inv carte = foldl (\boolAcc (x,y) -> boolAcc && coordInCarte (Coord x y) carte) True ((\ i j -> (i, j)) <$> [0..((cartel carte) - 1)] <*> [0..((carteh carte) - 1)])
+
+-------
+
+getEntranceOrExit :: Case -> String
+getEntranceOrExit ca 
+    | ca == Entree = "e"
+    | ca == Sortie = "s"
+    | otherwise = ""
+
+entranceExit_inv :: Carte -> Bool
+entranceExit_inv carte = case foldl (\strAcc (_,ca) -> strAcc ++ (getEntranceOrExit ca)) "" (listFromCarte carte) of
+    "es" -> True
+    "se" -> True
+    _ -> False
+
+-------
+
+ifIsEdge_IsAWall :: (Coord, Case) -> Int -> Int -> Bool
+ifIsEdge_IsAWall (co, ca) l h = case ((cx co), (cy co)) of
+        (0, _) -> ca == Mur -- on est sur le bord et c'est un mur
+        (_, 0) -> ca == Mur -- on est sur le bord et c'est un mur
+        (x, y) -> not (((x == l) || (y == h)) && (ca /= Mur))  -- si on est sur le bord ET ce n'est pas un mur alors c'est faux
+        
+
+surroundedByWalls_inv :: Carte -> Bool
+surroundedByWalls_inv carte = foldl (\boolAcc c -> boolAcc && ifIsEdge_IsAWall c ((cartel carte) - 1) ((carteh carte) - 1) ) True (listFromCarte carte)
+
+-------
+
+isSurroundedByWalls :: (Coord, Case) -> Carte -> Bool
+isSurroundedByWalls (co, ca) carte | ca == Porte = 
+isSurroundedByWalls (co, ca) carte = True
+
+doorsSurroundedByWalls_inv :: Carte -> Bool
+doorsSurroundedByWalls_inv carte = foldl (\boolAcc c -> boolAcc && ) True (listFromCarte carte)
