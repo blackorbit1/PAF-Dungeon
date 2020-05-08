@@ -11,6 +11,9 @@ import qualified System.Random as R
 import Carte (Carte)
 import qualified Carte as C
 
+import Environnement
+import qualified Environnement as E
+
 import System.IO.Unsafe -- HAHA
 
 
@@ -30,16 +33,16 @@ data GameState = GameState { persoX :: Int
 initGameState :: Int -> Int -> GameState
 initGameState x y = GameState 0 0 5 x y False
 
-data Modele = Cont  { carte :: C.Carte        -- carte actuelle
-                    --, envi :: Envi          -- environnement actuel
+data Modele = Modele  { carte :: C.Carte        -- carte actuelle
+                    , envi :: E.Envi          -- environnement actuel
                     --, gene :: StdGen        -- generateur aleatoire
                     --, log :: String         -- journal du tour
                     --, keyboard :: Keyboard  -- l’etat du clavier 
                     --, win :: Bool           -- gagné !
                     }
 
-initModele :: C.Carte -> Modele
-initModele carte = Cont carte
+initModele :: C.Carte -> Envi -> Modele
+initModele carte envi = Modele carte envi
 
 moveLeft :: GameState -> GameState
 moveLeft gs@(GameState px _ sp _ _ _) | px > 0 = gs { persoX = px - sp }

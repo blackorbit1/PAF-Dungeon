@@ -35,12 +35,12 @@ prop_genTruc_inv = forAll genTrucFree $ truc_inv
 
 genCarte :: Gen Carte
 genCarte = pure (read   "XXXXX\n\
-                        \X S X\n\
-                        \X   X\n\
                         \XE  X\n\
+                        \X   X\n\
+                        \XS  X\n\
                         \XXXXX"  )
 
-
+----------
 
 carteCoordInBoundsSpec = do
   describe "carteCoordInBounds : " $ do
@@ -50,8 +50,7 @@ carteCoordInBoundsSpec = do
 prop_carteCoordInBounds_inv :: Property
 prop_carteCoordInBounds_inv = forAll genCarte $ allCoordsInBounds_inv
 
-
-
+----------
 
 carteAllCaseExistsSpec = do
   describe "AllCoordInCarteCarte : " $ do
@@ -61,7 +60,7 @@ carteAllCaseExistsSpec = do
 prop_AllCoordInCarteCarte_inv :: Property
 prop_AllCoordInCarteCarte_inv = forAll genCarte $ allCoordInCarte_inv
 
-
+----------
 
 carteEntranceExitSpec = do
   describe "entranceExit : " $ do
@@ -71,7 +70,7 @@ carteEntranceExitSpec = do
 prop_entranceExitCarte_inv :: Property
 prop_entranceExitCarte_inv = forAll genCarte $ entranceExit_inv
 
-
+----------
 
 carteSurroundedByWallsSpec = do
   describe "surroundedByWalls : " $ do
@@ -81,7 +80,7 @@ carteSurroundedByWallsSpec = do
 prop_surroundedByWallsCarte_inv :: Property
 prop_surroundedByWallsCarte_inv = forAll genCarte $ surroundedByWalls_inv
 
-
+----------
 
 carteDoorsSurroundedByWallsSpec = do
   describe "doorsSurroundedByWalls : " $ do
@@ -89,5 +88,17 @@ carteDoorsSurroundedByWallsSpec = do
       property prop_doorsSurroundedByWallsCarte_inv
 
 prop_doorsSurroundedByWallsCarte_inv :: Property
-prop_doorsSurroundedByWallsCarte_inv = forAll genCarte $ doorsSurroundedByWalls_inv
+prop_doorsSurroundedByWallsCarte_inv = forAll genCarte $ doorsFramedByWalls_inv
+
+----------
+
+carteCarteSpec = do
+  describe "carte : " $ do
+    it "verifie que les cartes sont valides" $
+      property prop_carteCarte_inv
+
+prop_carteCarte_inv :: Property
+prop_carteCarte_inv = forAll genCarte $ prop_carte_inv
+
+----------
 

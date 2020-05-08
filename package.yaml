@@ -29,6 +29,7 @@ dependencies:
 - text
 - hspec
 - QuickCheck
+- debug
 
 library:
   source-dirs: src

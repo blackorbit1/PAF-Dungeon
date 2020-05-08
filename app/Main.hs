@@ -44,6 +44,9 @@ import Carte
 import qualified Carte as C
 
 
+import Environnement
+import qualified Environnement as E
+
 
 
 loadMur :: Renderer-> FilePath -> TextureMap -> SpriteMap -> IO (TextureMap, SpriteMap)
@@ -126,17 +129,20 @@ main = do
   x <- R.randomRIO(0, 540)
   y <- R.randomRIO(0, 380)
   let gameState = M.initGameState x y 
-  texte <- (readFile $ "maps/map2.txt")
-  let modele = M.initModele (read texte)
+  strcarte <- (readFile $ "maps/map3.txt")
+  strmobs <- (readFile $ "maps/mob1.txt")
+  let modele = M.initModele (read strcarte) (E.setEntity (E.entiteFromChar 'J' 0) (Coord 1 1) (E.createEnvi (read strcarte) strmobs))
 -- y = R.randomRIO(0, 380)
   -- initialisation de l'état du clavier
   let kbd = K.createKeyboard
   -- lancement de la gameLoop
 
+
   --putStrLn (show (listFromCarte (M.carte modele)))
   putStrLn (show (M.carte modele))
+  putStrLn (show (E.contenu_envi (M.envi modele)))
 
-  putStrLn ("doorsSurroundedByWalls_inv : " ++ (show (C.doorsSurroundedByWalls_inv (read texte))))
+  --putStrLn ("doorsSurroundedByWalls_inv : " ++ (show ((read texte))))
 
   gameLoop 60 renderer tmap' smap' kbd gameState modele
 
@@ -202,6 +208,7 @@ gameLoop frameRate renderer tmap smap kbd gameState modele = do
           _                     -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "mur") smap) x y)
     ))
     (Map.assocs (carte_contenu (M.carte modele))) -- est ce que c'est vraiment M.Carte ?
+
   
   
 

@@ -3,9 +3,6 @@ import qualified Data.Map.Strict as M
 import Data.Ord
 import Data.List
 
-import Environnement
-import qualified Environnement as E
-
 
 
 
@@ -122,16 +119,16 @@ getCase :: Coord -> Carte -> Maybe Case
 getCase coord carte = M.lookup coord (carte_contenu carte)
 
 -- savoir si une entité peut travaerser une case en fonction de son niveau d'accréditation
-isTraversable :: Case -> Entite -> Bool  
-isTraversable ca ent =
+isTraversable :: Case -> Int -> Bool  
+isTraversable ca clearanceLevel =
     case ca of
-        Normal -> (clearanceLevel ent) >= 1
-        Entree -> (clearanceLevel ent) >= 1
-        Sortie -> (clearanceLevel ent) >= 1
-        Porte _ Ouverte ->  (clearanceLevel ent) >= 10
-        Piege  ->           (clearanceLevel ent) >= 20
-        Porte _ Fermee ->   (clearanceLevel ent) >= 30
-        Mur -> (clearanceLevel ent) >= 40
+        Normal -> clearanceLevel >= 1
+        Entree -> clearanceLevel >= 1
+        Sortie -> clearanceLevel >= 1
+        Porte _ Ouverte ->  clearanceLevel >= 10
+        Piege  ->           clearanceLevel >= 20
+        Porte _ Fermee ->   clearanceLevel >= 30
+        Mur -> clearanceLevel >= 40
 
 -- modifier une case donnee dans une carte
 editCase :: Coord -> Case -> Carte -> Carte
@@ -154,7 +151,7 @@ closeDoor coord carte = case getCase coord carte of
 ---------------------INVARIANTS----------------------
 
 
--- Vérifie qu'une corrdonnée donee est entre les bornes données par la largeur et hauteur
+-- Vérifie qu'une coordonnée donee est entre les bornes données par la largeur et hauteur
 coordInBounds :: Coord -> Int -> Int -> Bool
 coordInBounds co larg haut = ( ( (cx co) < larg ) 
                          && ( (cy co) < haut ) )
@@ -164,7 +161,6 @@ allCoordsInBounds_inv :: Carte -> Bool
 allCoordsInBounds_inv carte = foldl (\boolAcc (co,_) -> boolAcc && coordInBounds co (cartel carte) (carteh carte) ) True (listFromCarte carte)
 
 -------
-
 -- Vérifie qu'une coordonnée donnée correspond bien à une case dans la carte
 coordInCarte :: Coord -> Carte -> Bool
 coordInCarte coord carte = case (getCase coord carte) of
@@ -208,8 +204,8 @@ surroundedByWalls_inv carte = foldl (\boolAcc c -> boolAcc && ifIsEdge_IsAWall c
 -------
 
 -- vérifie qu'une case donnée, si c'est une porte, est bien encadrée par des murs (renvoie True pour tout autre type de case)
-caseSurroundedByWalls :: (Coord, Case) -> Carte -> Bool
-caseSurroundedByWalls (co, ca) carte = case ca of
+caseFramedByWalls :: (Coord, Case) -> Carte -> Bool
+caseFramedByWalls (co, ca) carte = case ca of
     Porte EO _ -> ((getCase (Coord (cx co) ((cy co) - 1)) carte) == Just Mur) 
                && ((getCase (Coord (cx co) ((cy co) + 1)) carte) == Just Mur) 
     Porte NS _ -> ((getCase (Coord ((cx co) - 1) (cy co)) carte) == Just Mur) 
@@ -218,8 +214,8 @@ caseSurroundedByWalls (co, ca) carte = case ca of
 
 -- Vérifie que toutes les portes d'une case donnée sont encadrées par des portes    --  LOL
 -- Vérifie que toutes les portes d'une carte donnée sont encadrées par des murs
-doorsSurroundedByWalls_inv :: Carte -> Bool
-doorsSurroundedByWalls_inv carte = foldl (\boolAcc c -> boolAcc && caseSurroundedByWalls c carte ) True (listFromCarte carte)
+doorsFramedByWalls_inv :: Carte -> Bool
+doorsFramedByWalls_inv carte = foldl (\boolAcc c -> boolAcc && caseFramedByWalls c carte ) True (listFromCarte carte)
 
 {-
 Idee pour savoir s'il y a un chemin entre l'entree et la sortie
@@ -230,12 +226,89 @@ mydfs graph visited (x:xs) | elem x visited = mydfs graph visited xs
                            | otherwise = mydfs graph (x:visited) ((graph !! x) ++ xs)
 -}
 
+-------
+
+prop_carte_inv :: Carte -> Bool
+prop_carte_inv carte = (allCoordsInBounds_inv carte)
+                    && (allCoordInCarte_inv carte)
+                    && (entranceExit_inv carte)
+                    && (surroundedByWalls_inv carte)
+                    && (doorsFramedByWalls_inv carte)
+
+
+
+
 
 ---------------------PRECONDITION----------------------
 
 
 getCase_pre :: Coord -> Carte -> Bool
-getCase_pre co carte = (cx co) < (cartel carte)     --  x doit être strictement inférieur à la largeur de la carte
+getCase_pre co carte = (cx co) >= 0 && (cy co) >= 0
+                    && (cx co) < (cartel carte)     --  x doit être strictement inférieur à la largeur de la carte
                     && (cy co) < (carteh carte)     --  y doit être strictement inférieur à la hauteur de la carte
-                    -- ou alors simplement appeler coordInCarte co carte
+                    && (coordInCarte co carte)      --  co doit bien etre une cle dans table associative de la carte
+
+isTraversable_pre :: Case -> Int -> Bool
+isTraversable_pre ca clearanceLevel = clearanceLevel >= 0 -- "A FAIRE ! quand on aura les entites"
+
+editCase_pre :: Coord -> Case -> Carte -> Bool 
+editCase_pre co ca carte = (cx co) >= 0 && (cy co) >= 0
+                        && (cx co) < (cartel carte)     --  x doit être strictement inférieur à la largeur de la carte
+                        && (cy co) < (carteh carte)     --  y doit être strictement inférieur à la hauteur de la carte
+                        && (coordInCarte co carte)      --  co doit bien etre une cle dans table associative de la carte
+
+
+
+openDoor_pre :: Coord -> Carte -> Bool
+openDoor_pre coord carte = case (getCase coord carte) of
+    Just (Porte _ _) -> True  -- la case au coordonnees demandees est bien une porte
+    _ -> False              -- sinon , on renvoie False                
+-- A noter : on ne met pas de précondition sur l'etat de la porte avant de l'ouvrir (ouvrir une porte ouverte n'a pas d'effet)
+
+closeDoor_pre :: Coord -> Carte -> Bool
+closeDoor_pre coord carte = case (getCase coord carte) of
+    Just (Porte _ _) -> True  -- la case au coordonnees demandees est bien une porte
+    _ -> False              -- sinon , on renvoie False                  
+-- A noter : on ne met pas de précondition sur l'etat de la porte avant de la fermer (fermer une porte fermee n'a pas d'effet)
+
+
+---------------------POSTCONDITION----------------------
+
+getCase_post :: Coord -> Carte -> Bool
+getCase_post co carte = undefined -- etant donne que cette fonction retourne une valeur, il n'y a pas de modification à évaluer après l'appel
+
+isTraversable_post :: Case -> Int -> Bool
+isTraversable_post ca entite = undefined -- etant donne que cette fonction retourne une valeur, il n'y a pas de modification à évaluer après l'appel
+
+{-
+editcaseSure
+    PRECONDITION
+    editcase ----------\ est ce que le post condition doit prendre le résulatt d'edit case ou faire lui meme le edit case ? (avec du coup la meme signature qu'editcase)
+    POSTCONDITION  <---/
+-}
+
+editCase_post :: Coord -> Case -> Carte -> Bool 
+editCase_post co ca carte = (\new_carte -> (noChangesExceptAtCoord carte co new_carte) && ((Just ca) == (getCase co new_carte))) (editCase co ca carte)
+
+
+openDoor_post :: Coord -> Carte -> Bool 
+openDoor_post co carte = (\new_carte -> (noChangesExceptAtCoord carte co new_carte) && (case (getCase co new_carte) of
+    Just (Porte _ Ouverte) -> True
+    _ -> False )) (openDoor co carte)
+
+closeDoor_post :: Coord -> Carte -> Bool 
+closeDoor_post co carte = (\new_carte -> (noChangesExceptAtCoord carte co new_carte) && (case (getCase co new_carte) of
+    Just (Porte _ Fermee) -> True
+    _ -> False )) (closeDoor co carte)
+
+---------------------CONDITION-UTILS----------------------
+
+--vérifie si deux carte sont identiques, sauf a la coordonnee donnee
+noChangesExceptAtCoord :: Carte -> Coord ->  Carte -> Bool
+noChangesExceptAtCoord carte coord post_fonction = foldl (\boolAcc ((co1, ca1) , (co2, ca2)) -> 
+                                                boolAcc && (if ((co1 /= coord) && (ca1 == ca2)) then True else False ) )
+                                                True (zip (listFromCarte carte) (listFromCarte post_fonction))
+
+
+
 
