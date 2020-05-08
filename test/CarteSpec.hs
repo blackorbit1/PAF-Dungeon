@@ -83,3 +83,11 @@ prop_surroundedByWallsCarte_inv = forAll genCarte $ surroundedByWalls_inv
 
 
 
+carteDoorsSurroundedByWallsSpec = do
+  describe "doorsSurroundedByWalls : " $ do
+    it "verifie que les portes sont encadrées par des murs" $
+      property prop_doorsSurroundedByWallsCarte_inv
+
+prop_doorsSurroundedByWallsCarte_inv :: Property
+prop_doorsSurroundedByWallsCarte_inv = forAll genCarte $ doorsSurroundedByWalls_inv
+

@@ -9,6 +9,7 @@ main = hspec $ do
     CS.carteAllCaseExistsSpec
     CS.carteEntranceExitSpec
     CS.carteSurroundedByWallsSpec
+    CS.carteDoorsSurroundedByWallsSpec
 
 
 
