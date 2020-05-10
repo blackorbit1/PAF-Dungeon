@@ -158,7 +158,7 @@ main = do
 
   --putStrLn (show (listFromCarte (M.carte modele)))    --debug : affiche la map de la carte
   putStrLn (show (M.carte modele))
-  putStrLn (show (E.oneUncrossableMobPerCase_inv (M.envi modele)))    --debug : affiche la map de l'environnement
+  putStrLn (show (E.prop_oneUncrossableMobPerCase_inv (M.envi modele)))    --debug : affiche la map de l'environnement
  
   --putStrLn ("doorsSurroundedByWalls_inv : " ++ (show ((read texte))))
 

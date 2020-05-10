@@ -40,6 +40,12 @@ genCarte = pure (read   "XXXXX\n\
                         \XS  X\n\
                         \XXXXX"  )
 
+genCoord :: Gen Coord
+genCoord = do
+  x <- choose (0, 50)
+  y <- choose (0, 50)
+  pure (Coord x y)
+
 
 ----------
 
@@ -49,7 +55,7 @@ carteAllCoordsInBoundsSpec = do
       property prop_carteCoordInBounds_inv
 
 prop_carteCoordInBounds_inv :: Property
-prop_carteCoordInBounds_inv = forAll genCarte $ allCoordsInBounds_inv
+prop_carteCoordInBounds_inv = forAll genCarte $ prop_allCoordsInBounds_inv
 
 ----------
 
@@ -59,7 +65,7 @@ carteAllCaseExistsSpec = do
       property prop_AllCoordInCarteCarte_inv
 
 prop_AllCoordInCarteCarte_inv :: Property
-prop_AllCoordInCarteCarte_inv = forAll genCarte $ allCoordInCarte_inv
+prop_AllCoordInCarteCarte_inv = forAll genCarte $ prop_allCoordInCarte_inv
 
 ----------
 
@@ -69,7 +75,7 @@ carteEntranceExitSpec = do
       property prop_AllCoordInCarteCarte_inv
 
 prop_entranceExitCarte_inv :: Property
-prop_entranceExitCarte_inv = forAll genCarte $ entranceExit_inv
+prop_entranceExitCarte_inv = forAll genCarte $ prop_entranceExit_inv
 
 ----------
 
@@ -79,7 +85,7 @@ carteSurroundedByWallsSpec = do
       property prop_surroundedByWallsCarte_inv
 
 prop_surroundedByWallsCarte_inv :: Property
-prop_surroundedByWallsCarte_inv = forAll genCarte $ surroundedByWalls_inv
+prop_surroundedByWallsCarte_inv = forAll genCarte $ prop_surroundedByWalls_inv
 
 ----------
 
@@ -89,15 +95,25 @@ carteDoorsSurroundedByWallsSpec = do
       property prop_doorsSurroundedByWallsCarte_inv
 
 prop_doorsSurroundedByWallsCarte_inv :: Property
-prop_doorsSurroundedByWallsCarte_inv = forAll genCarte $ doorsFramedByWalls_inv
+prop_doorsSurroundedByWallsCarte_inv = forAll genCarte $ prop_doorsFramedByWalls_inv
+
+----------
+
+carteCoordSpec = do
+  describe "Carte ---------> Coord" $ do
+    it "verifie que les coordonnées sont valides" $
+      property prop_CoordCarte_inv
+
+prop_CoordCarte_inv :: Property
+prop_CoordCarte_inv = forAll genCoord $ prop_Coord_inv
 
 ----------
 
 carteCarteSpec = do
-  describe "Carte ---------> ALL INVARIANTS" $ do
+  describe "Carte ---------> ALL CARTE INVARIANTS" $ do
     it "verifie que les cartes sont valides" $
       property prop_carteCarte_inv
 
 prop_carteCarte_inv :: Property
-prop_carteCarte_inv = forAll genCarte $ prop_carte_inv
+prop_carteCarte_inv = forAll genCarte $ prop_Carte_inv
 

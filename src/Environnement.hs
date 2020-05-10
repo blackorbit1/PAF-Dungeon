@@ -43,11 +43,6 @@ createEnvi carte texte = foldl
 ---------------------UTILITAIRES----------------------
 
 
-franchissableEnv :: Coord -> Envi -> Bool
-franchissableEnv coord env = case (getEntitiesAtCoord coord env) of
-        Just entities -> foldl (\boolAcc entity -> (boolAcc && (isFranchissable entity))) True entities
-        Nothing -> False
-
 -- Cree une Entite a partir d'un caractère
 entiteFromChar :: Char -> Int -> Entite
 entiteFromChar caractere idn = case caractere of
@@ -62,6 +57,25 @@ strFromEntite ca = case ca of
 
 listFromEnv :: Envi -> [(Coord, [Entite])]
 listFromEnv env = (sortBy (comparing fst) (M.assocs (contenu_envi env) ))
+
+
+
+
+
+franchissableEnv :: Coord -> Envi -> Bool
+franchissableEnv coord env = case (getEntitiesAtCoord coord env) of
+        Just entities -> foldl (\boolAcc entity -> (boolAcc && (isFranchissable entity))) True entities
+        Nothing -> False
+
+prop_franchissableEnv_pre :: Coord -> Envi -> Bool
+prop_franchissableEnv_pre coord env = prop_positiveCoord_inv coord
+                               -- &&  prop_Envi_inv -- ? faut-il appeler les invariants des types utilisés dans les préconditions
+
+prop_franchissableEnv_post :: Coord -> Envi -> Bool
+prop_franchissableEnv_post coord env = undefined -- etant donne que cette fonction retourne une valeur, il n'y a pas de modification à évaluer après l'appel
+
+
+
 
 
 entityFromId :: [Entite]-> Int -> Maybe Entite
@@ -120,21 +134,20 @@ bougeById idn coord env carte = case ((trouveId idn env), (getCase coord carte))
 -- X  vérifier que les mobs ont le droit d'être sur la case sur laquelle ils sont
 -- No qu'il n'y ait qu'un seul joueur
 
-positiveCoord :: Coord -> Bool
-positiveCoord co = ((cx co) >= 0) && ((cy co) >= 0) 
+ 
 
-allCoordsPositive_inv :: Envi -> Bool
-allCoordsPositive_inv env = foldl (\boolAcc (co,_) -> boolAcc && (positiveCoord co)) True (listFromEnv env)
+prop_allCoordsPositive_inv :: Envi -> Bool
+prop_allCoordsPositive_inv env = foldl (\boolAcc (co,_) -> boolAcc && (prop_positiveCoord_inv co)) True (listFromEnv env)
 
 
-oneUncrossableMobPerCase_inv :: Envi -> Bool
-oneUncrossableMobPerCase_inv env = foldl (\boolAcc (co,_) -> boolAcc && (case (getEntitiesAtCoord co env) of
+prop_oneUncrossableMobPerCase_inv :: Envi -> Bool
+prop_oneUncrossableMobPerCase_inv env = foldl (\boolAcc (co,_) -> boolAcc && (case (getEntitiesAtCoord co env) of
         Just entities -> if (foldl (\uncrossableAcc entity ->  uncrossableAcc + (if (isFranchissable entity) then 0 else 1)) 0 entities) <= 1 then True else False
         Nothing -> True
         )) True (listFromEnv env)
 
-positiveStats_inv :: Envi -> Bool
-positiveStats_inv env = foldl (\boolAcc (co,_) -> boolAcc && (case (getEntitiesAtCoord co env) of
+prop_positiveStats_inv :: Envi -> Bool
+prop_positiveStats_inv env = foldl (\boolAcc (co,_) -> boolAcc && (case (getEntitiesAtCoord co env) of
         Just entities -> foldl (\boolAcc2 entity ->  boolAcc2 && (((pvie entity) >= 0) && ((clearanceLevel entity) >= 0))) True entities
         Nothing -> True
         )) True (listFromEnv env)
@@ -155,19 +168,24 @@ quadraticUniqueIds_inv env = foldl (\boolAcc (co,_) -> boolAcc && (case (getEnti
         )) True (listFromEnv env)
 
 
-uniqueIds_inv ::  Envi -> Bool
-uniqueIds_inv env = (\(result, _) -> result) (foldl (\(boolAcc, seenIdn) (co,_) -> (case (getEntitiesAtCoord co env) of
+prop_uniqueIds_inv ::  Envi -> Bool
+prop_uniqueIds_inv env = (\(result, _) -> result) (foldl (\(boolAcc, seenIdn) (co,_) -> (case (getEntitiesAtCoord co env) of
                 Just entities -> (foldl (\(boolAcc2, seenIdn2) entity ->  ((boolAcc2 && ((idn entity) `notElem` seenIdn2)), (idn entity):seenIdn2)) (boolAcc, seenIdn) entities)
                 Nothing -> (boolAcc, seenIdn)
                 )
         ) (True , []) (listFromEnv env)) 
 
 
+prop_Envi_inv :: Envi -> Bool
+prop_Envi_inv env = (prop_allCoordsPositive_inv env)
+                 && (prop_oneUncrossableMobPerCase_inv env)
+                 && (prop_positiveStats_inv env)
+                 && (prop_uniqueIds_inv env)
 
----------------------PRECONDITION----------------------
+
+---------------------PRE / POST CONDITIONS----------------------
 
 
--> Carte -
 
 ---------------------POSTCONDITION----------------------
 

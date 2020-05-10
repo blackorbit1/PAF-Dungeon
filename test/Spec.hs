@@ -13,9 +13,12 @@ main = hspec $ do
     CS.carteDoorsSurroundedByWallsSpec
     CS.carteCarteSpec
 
-    ES.environnementAllCoordsPositive
-    ES.environnementOneUncrossableMobPerCase
-    ES.environnementPositiveStats
-    ES.environnementUniqueIds
+    CS.carteCoordSpec
+
+    ES.environnementAllCoordsPositiveSpec
+    ES.environnementOneUncrossableMobPerCaseSpec
+    ES.environnementPositiveStatsSpec
+    ES.environnementUniqueIdsSpec
+    ES.environnementEnviSpec
 
 
