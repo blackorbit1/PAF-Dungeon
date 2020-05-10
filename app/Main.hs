@@ -33,7 +33,7 @@ import qualified Keyboard as K
 
 import qualified Debug.Trace as T
 
-import Modele (GameState)
+import Modele (Modele)
 import qualified Modele as M
 
 import System.Random
@@ -144,9 +144,9 @@ main = do
   (tmap', smap') <- loadVirus renderer "assets/virus.png" tmap' smap'
   
   -- initialisation de l'état du jeu
-  x <- R.randomRIO(0, 540)
-  y <- R.randomRIO(0, 380)
-  let gameState = M.initGameState x y 
+  --x <- R.randomRIO(0, 540)
+  --y <- R.randomRIO(0, 380)
+  --let gameState = M.initGameState x y 
   strcarte <- (readFile $ "maps/map1.txt")
   strmobs <- (readFile $ "maps/mob1.txt")
   let modele = M.initModele (read strcarte) (E.setEntity (E.entiteFromChar 'M' 1) (Coord 2 1) (E.setEntity (E.entiteFromChar 'J' 0) (Coord 1 1) (E.createEnvi (read strcarte) strmobs)))
@@ -162,7 +162,7 @@ main = do
  
   --putStrLn ("doorsSurroundedByWalls_inv : " ++ (show ((read texte))))
 
-  gameLoop 60 renderer tmap' smap' kbd gameState modele
+  gameLoop 60 renderer tmap' smap' kbd modele
 
 {-
 data RendererInfos = RendererInfos  { renderer :: Renderer
@@ -191,8 +191,8 @@ displayCarte renderer carte = foldr displayCarteAux renderer (Map.assocs (carte_
 -}
 
 
-gameLoop :: (RealFrac a, Show a) => a -> Renderer -> TextureMap -> SpriteMap -> Keyboard -> GameState -> M.Modele -> IO ()
-gameLoop frameRate renderer tmap smap kbd gameState modele = do
+gameLoop :: (RealFrac a, Show a) => a -> Renderer -> TextureMap -> SpriteMap -> Keyboard -> Modele -> IO ()
+gameLoop frameRate renderer tmap smap kbd modele = do
   startTime <- time
   events <- pollEvents
   let kbd' = K.handleEvents events kbd
@@ -255,8 +255,10 @@ gameLoop frameRate renderer tmap smap kbd gameState modele = do
   -- putStrLn $ "Delta time: " <> (show (deltaTime * 1000)) <> " (ms)"
   -- putStrLn $ "Frame rate: " <> (show (1 / deltaTime)) <> " (frame/s)"
   --- update du game state
-  let gameState' = M.gameStep (M.checkDead gameState) kbd' deltaTime
+  let modele' = M.gameStep (M.checkDead modele) kbd' deltaTime
   ---
-  unless (K.keypressed KeycodeEscape kbd') (gameLoop frameRate renderer tmap smap kbd' gameState' modele)
+  putStrLn "prop_uniqueIds_inv"
+  putStrLn (show (E.prop_uniqueIds_inv (M.envi modele)))
+  unless (K.keypressed KeycodeEscape kbd') (gameLoop frameRate renderer tmap smap kbd' modele')
 
 

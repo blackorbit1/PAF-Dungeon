@@ -12,12 +12,24 @@ import qualified Environnement as E
 import Keyboard (Keyboard)
 import qualified Keyboard as K
 
+import System.Random
+import qualified System.Random as R
+
+-- H : Aller en haut
+-- B : Aller en bas
+-- D : Aller a droite
+-- G : Aller a gauche
+-- U : Utiliser ( contextuel )
+-- A : Attaquer
+-- R : Ne rien faire
+data Ordre = Haut | Bas | Droite | Gauche | Uti | Atk | Rien deriving Show
+
 
 data Modele = Modele  { carte :: Carte        -- carte actuelle
                       , envi :: Envi          -- environnement actuel
-                      --, gene :: StdGen        -- generateur aleatoire
-                      --, log :: String         -- journal du tour
-                      --, keyboard :: Keyboard  -- l’etat du clavier 
+                      , gene :: (Int,StdGen)        -- generateur aleatoire l'int correspond à la prochaine seed du generateur
+                      , logs :: String         -- journal du tour
+                      , keyboard :: Keyboard  -- l’etat du clavier 
                       --, win :: Bool           -- gagné !
                       }
 
@@ -34,12 +46,12 @@ instance ToString Modele where
 
 
 initModele :: Carte -> Envi -> Modele
-initModele carte envi = Modele carte envi
+initModele carte envi = Modele carte envi (1, mkStdGen 0) "" K.createKeyboard
 
 
 
 bouge :: Modele -> Entite -> Coord -> Modele
-bouge modele entity coord = Modele (carte modele) (E.bougeById (E.idn entity) coord (envi modele) (carte modele))
+bouge modele entity coord = modele { envi = (E.bougeById (E.idn entity) coord (envi modele) (carte modele)) }
 
 prop_bouge_pre :: Modele -> Entite -> Coord -> Bool
 prop_bouge_pre modele entity coord = (E.prop_bougeById_pre (E.idn entity) coord (envi modele) (carte modele))
@@ -56,52 +68,101 @@ prop_Modele_inv modele = C.prop_Carte_inv (carte modele)
 
 
 
+prevoir :: Entite -> [(Int,Ordre)]
+prevoir entity = case entity of
+  E.Monstre _ _ _ _ -> [(1, Haut ),(1, Bas ),(1, Droite ),(1, Gauche ),(0, Uti ), (4, Atk ), (3, Rien )]
+  otherwise -> [(1, Haut ),(1, Bas ),(1, Droite ),(1, Gauche ),(1, Uti ), (0, Atk ), (1, Rien )]
 
-data GameState = GameState { persoX :: Int
-                           , persoY :: Int
-                           , speed :: Int 
-                           , virusX :: Int
-                           , virusY :: Int
-                           , win :: Bool}
-  deriving (Eq, Show)
+transformPonderatedList :: [(Int, Ordre)] -> [Ordre]
+transformPonderatedList ((0,ordre):xs) = transformPonderatedList xs
+transformPonderatedList ((coef,ordre):xs) = ordre:(transformPonderatedList ((coef-1,ordre):xs))
+transformPonderatedList [] = []
 
--- x = R.randomRIO(0, 540)
--- y = R.randomRIO(0, 380)
-initGameState :: Int -> Int -> GameState
-initGameState x y = GameState 0 0 5 x y False
+entityCoord :: Entite -> Modele -> Maybe Coord
+entityCoord e m = (\result -> case result of 
+    Just (co, _) -> Just co
+    Nothing -> Nothing ) 
+  (E.trouveId (E.idn e) (envi  m))
 
-moveLeft :: GameState -> GameState
-moveLeft gs@(GameState px _ sp _ _ _) | px > 0 = gs { persoX = px - sp }
-                                | otherwise = gs
+decider :: [(Int, Ordre)] -> Modele -> Entite -> Modele
+decider list m entity = 
+  case (entityCoord entity m) of
+    Just c -> (
+      let (ordre, modele) = pickOrder (transformPonderatedList list) m in
+      case ordre of
+        Haut    -> bouge modele entity (C.Coord (C.cx c) ((C.cy c) + 1))
+        Bas     -> bouge modele entity (C.Coord (C.cx c) ((C.cy c) - 1))
+        Droite  -> bouge modele entity (C.Coord ((C.cx c) + 1) (C.cy c))
+        Gauche  -> bouge modele entity (C.Coord ((C.cx c) - 1) (C.cy c))
+        Atk -> attack modele entity c
+        Uti -> modele
+        Rien -> modele
+        --_ -> modele
+      )
+    Nothing -> m -- Si l'entitee qu'on traite ne correspond à aucune entié dans l'environnement, on ne change rien
 
-moveRight :: GameState -> GameState
-moveRight gs@(GameState px _ sp _ _ _) | px < 540 = gs { persoX = px + sp }
-                                 | otherwise = gs
-
-                              
-moveUp :: GameState -> GameState
-moveUp gs@(GameState _ py sp _ _ _) | py > 0 = gs { persoY = py - sp }
-                              | otherwise = gs
-
-moveDown :: GameState -> GameState
-moveDown gs@(GameState _ py sp _ _ _) | py < 380 = gs { persoY = py + sp }
-                                | otherwise = gs
-
-checkDead :: GameState -> GameState
-checkDead gs@(GameState px py _ vx vy _) 
-  | (sqrt (fromIntegral (((px - vx) * (px - vx)) + ((py - vy) * (py - vy)) ))) <= 100 = gs {win = True}
-  | otherwise =  gs
-
-
-gameStep :: RealFrac a => GameState -> Keyboard -> a -> GameState
-gameStep gstate kbd deltaTime 
-  | K.keypressed KeycodeZ kbd = moveUp gstate
-  | K.keypressed KeycodeQ kbd = moveLeft gstate
-  | K.keypressed KeycodeS kbd = moveDown gstate
-  | K.keypressed KeycodeD kbd = moveRight gstate
-  | otherwise = gstate
 
 {-
+use :: Modele -> Entite -> Modele
+use modele entity = case entity of
+  Monstre -> 
+-}
+
+mml :: Maybe [a] -> Maybe [a] -> Maybe [a] -- merge maybe list
+mml a b = case (a,b) of
+  (Nothing, Nothing) -> Nothing
+  (Nothing, Just b) -> Just b
+  (Just a, Nothing) -> Just a 
+  (Just a, Just b) -> Just (a <> b)
+
+attackAux :: (Int, Modele) -> Entite -> (Int, Modele)
+attackAux (damage, modele) entity@(E.Monstre idnn pviee _ _) = case (entityCoord entity modele) of 
+  Just coord -> (damage, modele { envi = (E.setEntity (entity { E.pvie = pviee - damage }) coord (E.rmEntById idnn (envi modele))) } )
+  Nothing -> (damage, modele)                      -- dans le cas où l'entitee ne correspond à aucunes coordonnées dans l'environnement
+attackAux (damage, modele) _ = (damage, modele) -- dans le cas où c'est une entitee qui ne peut pas prendre de dommages
+
+
+attack :: Modele -> Entite -> Coord -> Modele
+attack modele entity c = (\(_, m) -> m) (foldl attackAux (2, modele) (case ( -- ici, l'attaque fait 2 de degats
+  (E.getEntitiesAtCoord (C.Coord (C.cx c) ((C.cy c) + 1)) (envi modele) )
+  `mml` (E.getEntitiesAtCoord (C.Coord (C.cx c) ((C.cy c) - 1)) (envi modele) )
+  `mml` (E.getEntitiesAtCoord (C.Coord ((C.cx c) + 1) (C.cy c)) (envi modele) )
+  `mml` (E.getEntitiesAtCoord (C.Coord ((C.cx c) - 1) (C.cy c)) (envi modele) )
+  `mml` (E.getEntitiesAtCoord (C.Coord ((C.cx c) + 1) ((C.cy c) + 1)) (envi modele) )
+  `mml` (E.getEntitiesAtCoord (C.Coord ((C.cx c) + 1) ((C.cy c) - 1)) (envi modele) )
+  `mml` (E.getEntitiesAtCoord (C.Coord ((C.cx c) - 1) ((C.cy c) + 1)) (envi modele) )
+  `mml` (E.getEntitiesAtCoord (C.Coord ((C.cx c) - 1) ((C.cy c) - 1)) (envi modele) )) of
+    Just liste -> liste
+    Nothing -> []
+     ))
+
+
+
+
+pickOrder :: [Ordre] -> Modele -> (Ordre, Modele)
+pickOrder orders modele = (orders!!(head (R.randomRs (0,(length orders) - 1) (snd (gene modele)))) -- On renvoie une ordre aleatoirement dans la liste
+                        , modele { gene = ( (fst (gene modele)) + 1, R.mkStdGen (fst (gene modele))) } ) -- on met à jour le generateur avec une nouvelle seed
+
+
+gameStep :: RealFrac a => Modele -> Keyboard -> a -> Modele
+gameStep modele kbd deltaTime = case E.getPlayer (envi modele) of
+  Just (c, player) ->  if (K.keypressed KeycodeZ kbd) then bouge modele player (C.Coord (C.cx c) ((C.cy c) - 1))
+                  else if (K.keypressed KeycodeS kbd) then bouge modele player (C.Coord (C.cx c) ((C.cy c) + 1))
+                  else if (K.keypressed KeycodeD kbd) then bouge modele player (C.Coord ((C.cx c) + 1) (C.cy c))
+                  else if (K.keypressed KeycodeQ kbd) then bouge modele player (C.Coord ((C.cx c) - 1) (C.cy c))
+                  else modele
+  Nothing -> modele
+
+
+checkDead :: Modele -> Modele
+checkDead modele = modele
+
+
+
+
+
+{-
+
 moveLeft :: Modele -> Modele
 moveLeft gs@(GameState px _ sp _ _ _) | px > 0 = gs { persoX = px - sp }
                                 | otherwise = gs
@@ -134,8 +195,4 @@ gameStep gstate kbd deltaTime
   | otherwise = gstate
 
 
-
-
 -}
-
-
