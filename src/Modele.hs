@@ -1,5 +1,5 @@
 
-module Behavior where
+module Modele where
 
 import SDL
 

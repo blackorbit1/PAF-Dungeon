@@ -71,6 +71,19 @@ environnementEnviSpec = do
 prop_environnementEnvi_inv :: Property
 prop_environnementEnvi_inv = forAll genEnv $ prop_Envi_inv
 
+----------
+
+{-
+environnementEntiteSpec = do
+  describe "Environnement ---------> entite" $ do
+    it "verifie que toutes les entitees sont valides" $
+      property prop_environnementEntite_inv
+
+prop_environnementEntite_inv :: Property
+prop_environnementEntite_inv = forAll genEnv $ prop_Entite_inv
+-}
+
+
 
 
 

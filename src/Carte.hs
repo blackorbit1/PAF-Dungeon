@@ -21,6 +21,7 @@ data Case = Normal -- une case vide
     | Mur -- infranchissable (sauf pour les fantomes ...)
     | Entree -- debut du niveau
     | Sortie -- fin du niveau
+    | Undefined -- case indefinie, (pour les caracteres inconnus a l'initialisation depuis le fichier carte)
     deriving (Eq, Show)
 
 data Coord = Coord {cx :: Int , cy :: Int} deriving (Eq, Show)
@@ -58,7 +59,11 @@ createCarteAux c@(Carte {cartel = cl, carteh = ch, carte_contenu = cc}) caracter
 createCarte :: String -> Carte
 createCarte texte = foldl createCarteAux (Carte 0 1 M.empty) texte
 
+prop_createCarte_pre :: String -> Bool
+prop_createCarte_pre str = foldl (\boolAcc cara -> boolAcc && ((caseFromChar cara) /= Undefined) ) True str     --  Tous les caracteres de l'initialisation doivent etre reconnus
 
+prop_createCarte_post :: Carte -> Bool
+prop_createCarte_post carte = prop_Carte_inv carte  -- la carte cree doit etre valide  (impossible si elle correspond bien au txt)
 
 instance Show Carte where
     show = toString
@@ -92,6 +97,7 @@ caseFromChar caractere = case caractere of
     'X' -> Mur
     'E' -> Entree
     'S' -> Sortie
+    otherwise -> Undefined
 
 -- Renvoie le caractère  correspondant à un type de case donné
 strFromCase :: Case -> String

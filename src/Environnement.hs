@@ -33,10 +33,27 @@ toStringAux [] = "-"
 instance ToString Envi where
         toString env = fst (foldl (\(strAcc, y) (coord, entities) -> ((strAcc ++ (if ((cy coord) > y) then "|\n|" else "") ++ (toStringAux entities)), (cy coord)) ) ("",0) (listFromEnv env)) 
 
+
+
+insertEntitiesAux :: (Int, Int, Int, Envi) -> Char -> (Int, Int, Int, Envi)
+insertEntitiesAux (x, y, idn, env) '\n' = (0, y+1, idn, env)
+insertEntitiesAux (x, y, idn, env) ' ' = (x+1, y, idn, env)
+insertEntitiesAux (x, y, idn, env) char = (x+1, y, (idn + 1), (setEntity (entiteFromChar char idn) (Coord x y) env))
+
+insertEntities :: String -> Envi -> Envi
+insertEntities texte env = (\(_, _, _, new_env) -> new_env) (foldl insertEntitiesAux (0, 0, 0, env) texte)
+
+
 createEnvi :: Carte -> String -> Envi
-createEnvi carte texte = foldl 
+createEnvi carte texte = insertEntities texte (foldl 
                         (\ env@(Envi {contenu_envi = ce}) (coord, _ ) -> env {contenu_envi = (M.insert coord [] ce) })
-                        (Envi M.empty) (listFromCarte carte)
+                        (Envi M.empty) (listFromCarte carte))
+
+prop_createEnvi_pre :: Carte -> String -> Bool
+prop_createEnvi_pre carte _ = prop_Carte_inv carte    -- faut-il verifier les invariant des types utilisés ?
+
+prop_createEnvi_post :: Envi -> Bool
+prop_createEnvi_post env = prop_Envi_inv env  -- meme question que pour la post condition de la carte
 
 
 
@@ -78,10 +95,10 @@ prop_franchissableEnv_post coord env = undefined -- etant donne que cette foncti
 
 
 
-entityFromId :: [Entite]-> Int -> Maybe Entite
+entityFromId :: [Entite] -> Int -> Maybe Entite
 entityFromId (entity:entities) wanted_idn = if (idn entity) == wanted_idn then Just entity else (entityFromId entities wanted_idn)
 entityFromId [] _ = Nothing
-
+-- cette fonction ne semble pas necessiter de pre condition particuliere (le maybe permettant de supporter des entrées incorrectes). De plus elle n'apporte aucune modification qu'il faudrait vérifier à l'aide d'un post
 
 trouveId_aux :: Int -> [(Coord, [Entite])] -> Maybe (Coord, Entite)
 trouveId_aux idn ((coord, entities):xs) = case (entityFromId entities idn) of
@@ -92,8 +109,14 @@ trouveId_aux _ [] = Nothing
 trouveId :: Int -> Envi -> Maybe (Coord, Entite)
 trouveId idn env = trouveId_aux idn (listFromEnv env)
 
+prop_trouveId_pre :: Int -> Envi -> Bool
+prop_trouveId_pre idn env = ( idn >= 0 )
+                        && prop_uniqueIds_inv env -- ici il est particulierement important que les id soient uniques
+-- la fonction n'apporte aucune modification qu'il faudrait vérifier à l'aide d'un post
+
 getEntitiesAtCoord :: Coord -> Envi -> Maybe [Entite]
 getEntitiesAtCoord coord env = M.lookup coord (contenu_envi env)
+-- cette fonction ne semble pas necessiter de pre condition particuliere (le maybe permettant de supporter des entrées incorrectes). De plus elle n'apporte aucune modification qu'il faudrait vérifier à l'aide d'un post
 
 
 
@@ -106,6 +129,19 @@ setEntity entite coord env = case getEntitiesAtCoord coord env of
         Nothing -> env  -- cette fonction ne permet pas de placer des entités en dehors des coordonnées de la map
                         -- mais il est toujours possible de les placer à des endroits où ils ne devraient pas pouvoir aller
 
+prop_setEntity_pre :: Entite -> Coord -> Envi -> Bool 
+prop_setEntity_pre entity _ env =  prop_Envi_inv env
+                                && prop_Entite_inv entity
+                                && ((trouveId (idn entity) env) == Nothing ) -- l'id ne doit pas déjà exister dans l'environnement
+
+prop_setEntity_post :: Entite -> Coord -> Envi -> Bool 
+prop_setEntity_post entity coord env = ((trouveId (idn entity) env) == (Just (coord, entity))) -- on retrouve bien l'entite par id aux nouvelles coordonnees
+                                    && (case (getEntitiesAtCoord coord env) of
+                                                Just entities -> entity `elem` entities         --l'entite est bien dans la liste d'entites aux nouvelles coordonnes
+                                                Nothing -> False )
+
+
+
 rmEntById :: Int -> Envi -> Envi
 rmEntById idn env = case trouveId idn env of
         Just (coord, en) ->  Envi(M.insert coord (delete en (case (getEntitiesAtCoord coord env) of
@@ -114,15 +150,33 @@ rmEntById idn env = case trouveId idn env of
                 )) (contenu_envi env))
         Nothing -> env
 
+prop_rmEntById_pre :: Int -> Envi -> Bool 
+prop_rmEntById_pre idn env = (idn > 0) && ((trouveId idn env) /= Nothing )
+
+prop_rmEntById_post :: Int -> Envi -> Bool 
+prop_rmEntById_post idn env = (idn > 0) && ((trouveId idn env) == Nothing )
+
 
 bougeById :: Int -> Coord -> Envi -> Carte -> Envi
 bougeById idn coord env carte = case ((trouveId idn env), (getCase coord carte)) of
         ((Just (_, entite)), (Just ca)) -> if (isTraversable ca (clearanceLevel entite)) && (franchissableEnv coord env) then
                 (setEntity entite coord (rmEntById idn env)) else env
-        _ -> env --si trouveId ou getCase renvoient Nothing
+        _ -> env -- si l'entite ou la case n'existe pas on renvoie l'env sans modification
 
+prop_bougeById_pre :: Int -> Coord -> Envi -> Carte -> Bool
+prop_bougeById_pre idn coord env carte =   (coordInCarte coord carte)
+                                        && ((getEntitiesAtCoord coord env) /= Nothing )
+                                        && (idn > 0)
+                                        && ((trouveId idn env) /= Nothing )
 
+prop_bougeById_post :: Int -> Coord -> Envi -> Carte -> Bool
+prop_bougeById_post idn coord env carte =  (prop_uniqueIds_inv env) -- pour etre sur que l'entité n'a pas été dupliquée
+                                        && ((trouveId idn env) /= Nothing ) -- l'entitee n'a pas été supprimee pendant son deplacement
+                                        && (case ((getEntitiesAtCoord coord env), (trouveId idn env)) of
+                                                ((Just entities), (Just (co, entity))) -> (entity `elem` entities) && (coord == co)
+                                                otherwise -> False )
 
+                                                
 ---------------------INVARIANTS----------------------
 
 
@@ -183,9 +237,8 @@ prop_Envi_inv env = (prop_allCoordsPositive_inv env)
                  && (prop_uniqueIds_inv env)
 
 
----------------------PRE / POST CONDITIONS----------------------
-
-
-
----------------------POSTCONDITION----------------------
+prop_Entite_inv :: Entite -> Bool
+prop_Entite_inv entity =   ((idn entity) > 0)
+                        && ((pvie entity) > 0)
+                        && ((clearanceLevel entity) > 0)
 
