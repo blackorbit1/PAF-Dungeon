@@ -34,7 +34,7 @@ import qualified Keyboard as K
 import qualified Debug.Trace as T
 
 import Modele (GameState)
-import qualified Behavior as M
+import qualified Modele as M
 
 import System.Random
 import qualified System.Random as R

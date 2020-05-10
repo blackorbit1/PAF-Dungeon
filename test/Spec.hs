@@ -1,6 +1,7 @@
 import Test.Hspec
 import CarteSpec as CS
 import EnvSpec as ES
+import ModeleSpec as MS
 
 main :: IO ()
 --main = putStrLn "Test suite not yet implemented"
@@ -20,5 +21,8 @@ main = hspec $ do
     ES.environnementPositiveStatsSpec
     ES.environnementUniqueIdsSpec
     ES.environnementEnviSpec
+
+    MS.modeleModeleSpec
+
 
 

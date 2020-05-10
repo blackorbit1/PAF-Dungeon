@@ -76,7 +76,8 @@ listFromEnv :: Envi -> [(Coord, [Entite])]
 listFromEnv env = (sortBy (comparing fst) (M.assocs (contenu_envi env) ))
 
 
-
+listEntities :: Envi -> [Entite]
+listEntities env = foldl (\entities (_,entlist) -> entities <> entlist) [] (listFromEnv env)
 
 
 franchissableEnv :: Coord -> Envi -> Bool
@@ -235,10 +236,11 @@ prop_Envi_inv env = (prop_allCoordsPositive_inv env)
                  && (prop_oneUncrossableMobPerCase_inv env)
                  && (prop_positiveStats_inv env)
                  && (prop_uniqueIds_inv env)
+                 && (foldl (\boolAcc entity -> boolAcc && (prop_Entite_inv entity)) True (listEntities env))
 
 
 prop_Entite_inv :: Entite -> Bool
-prop_Entite_inv entity =   ((idn entity) > 0)
-                        && ((pvie entity) > 0)
-                        && ((clearanceLevel entity) > 0)
+prop_Entite_inv entity =   ((idn entity) >= 0)
+                        && ((pvie entity) >= 0)
+                        && ((clearanceLevel entity) >= 0)
 
