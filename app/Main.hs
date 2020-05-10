@@ -105,6 +105,20 @@ loadExit rdr path tmap smap = do
   let smap' = SM.addSprite (SpriteId "exit") sprite smap
   return (tmap', smap')
 
+loadPerso :: Renderer-> FilePath -> TextureMap -> SpriteMap -> IO (TextureMap, SpriteMap)
+loadPerso rdr path tmap smap = do
+  tmap' <- TM.loadTexture rdr path (TextureId "perso") tmap
+  let sprite = S.defaultScale $ S.addImage S.createEmptySprite $ S.createImage (TextureId "perso") (S.mkArea 0 0 50 50)
+  let smap' = SM.addSprite (SpriteId "perso") sprite smap
+  return (tmap', smap')
+
+loadVirus :: Renderer-> FilePath -> TextureMap -> SpriteMap -> IO (TextureMap, SpriteMap)
+loadVirus rdr path tmap smap = do
+  tmap' <- TM.loadTexture rdr path (TextureId "virus") tmap
+  let sprite = S.defaultScale $ S.addImage S.createEmptySprite $ S.createImage (TextureId "virus") (S.mkArea 0 0 50 50)
+  let smap' = SM.addSprite (SpriteId "virus") sprite smap
+  return (tmap', smap')
+
   
 
 
@@ -124,24 +138,28 @@ main = do
   (tmap', smap') <- loadPorNSOuv renderer "assets/porte_ouverte_ns.png" tmap' smap'
   (tmap', smap') <- loadEntrance renderer "assets/entrance.png" tmap' smap'
   (tmap', smap') <- loadExit renderer "assets/exit.png" tmap' smap'
+    -- chargement du personnage
+  (tmap', smap') <- loadPerso renderer "assets/perso.png" tmap' smap'
+  -- chargement du virus
+  (tmap', smap') <- loadVirus renderer "assets/virus.png" tmap' smap'
   
   -- initialisation de l'état du jeu
   x <- R.randomRIO(0, 540)
   y <- R.randomRIO(0, 380)
   let gameState = M.initGameState x y 
-  strcarte <- (readFile $ "maps/map3.txt")
+  strcarte <- (readFile $ "maps/map1.txt")
   strmobs <- (readFile $ "maps/mob1.txt")
-  let modele = M.initModele (read strcarte) (E.setEntity (E.entiteFromChar 'J' 0) (Coord 1 1) (E.createEnvi (read strcarte) strmobs))
+  let modele = M.initModele (read strcarte) (E.setEntity (E.entiteFromChar 'M' 1) (Coord 2 1) (E.setEntity (E.entiteFromChar 'J' 0) (Coord 1 1) (E.createEnvi (read strcarte) strmobs)))
 -- y = R.randomRIO(0, 380)
   -- initialisation de l'état du clavier
   let kbd = K.createKeyboard
   -- lancement de la gameLoop
 
 
-  --putStrLn (show (listFromCarte (M.carte modele)))
+  --putStrLn (show (listFromCarte (M.carte modele)))    --debug : affiche la map de la carte
   putStrLn (show (M.carte modele))
-  putStrLn (show (E.contenu_envi (M.envi modele)))
-
+  putStrLn (show (E.oneUncrossableMobPerCase_inv (M.envi modele)))    --debug : affiche la map de l'environnement
+ 
   --putStrLn ("doorsSurroundedByWalls_inv : " ++ (show ((read texte))))
 
   gameLoop 60 renderer tmap' smap' kbd gameState modele
@@ -194,8 +212,8 @@ gameLoop frameRate renderer tmap smap kbd gameState modele = do
   -}
   
   mapM_ ( \ (co, ca) -> (do
-    let x = (fromIntegral (50 * ((cartel (M.carte modele)) * 0 + (cx co)))) 
-    let y = (fromIntegral (50 * ((carteh (M.carte modele)) * 0 + (cy co))))
+    let x = (fromIntegral (50 * (cx co))) 
+    let y = (fromIntegral (50 * (cy co)))
     case ca of
           C.Normal              -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "sol") smap) x y)
           C.Mur                 -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "mur") smap) x y)
@@ -207,7 +225,22 @@ gameLoop frameRate renderer tmap smap kbd gameState modele = do
           C.Sortie              -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "exit") smap) x y)
           _                     -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "mur") smap) x y)
     ))
-    (Map.assocs (carte_contenu (M.carte modele))) -- est ce que c'est vraiment M.Carte ?
+    (C.listFromCarte (M.carte modele)) 
+
+
+
+  mapM_ ( \ (co, entites) -> (do
+    let x = (fromIntegral (50 * (cx co))) 
+    let y = (fromIntegral (50 * (cy co)))
+
+    mapM_ ( \ entity -> (do
+      case entity of
+        E.Joueur _ _ _ _ -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "perso") smap) x y)
+        E.Monstre _ _ _ _ -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "virus") smap) x y)
+        --_ -> S.displaySprite renderer tmap S.createEmptySprite
+        )) entites
+
+    )) (E.listFromEnv (M.envi modele)) 
 
   
   

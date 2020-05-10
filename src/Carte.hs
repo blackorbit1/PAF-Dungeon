@@ -1,5 +1,7 @@
 module Carte where
+
 import qualified Data.Map.Strict as M
+
 import Data.Ord
 import Data.List
 
@@ -153,8 +155,9 @@ closeDoor coord carte = case getCase coord carte of
 
 -- Vérifie qu'une coordonnée donee est entre les bornes données par la largeur et hauteur
 coordInBounds :: Coord -> Int -> Int -> Bool
-coordInBounds co larg haut = ( ( (cx co) < larg ) 
-                         && ( (cy co) < haut ) )
+coordInBounds co larg haut = (cx co) >= 0 && (cy co) >= 0
+                          && ( ( (cx co) < larg ) 
+                          && ( (cy co) < haut ) )
 
 -- Vérifie que toutes les coordonnées des cases sont entre les bornes données par la largeur et hauteur de la carte
 allCoordsInBounds_inv :: Carte -> Bool
@@ -212,7 +215,6 @@ caseFramedByWalls (co, ca) carte = case ca of
                && ((getCase (Coord ((cx co) + 1) (cy co)) carte) == Just Mur) 
     _ -> True
 
--- Vérifie que toutes les portes d'une case donnée sont encadrées par des portes    --  LOL
 -- Vérifie que toutes les portes d'une carte donnée sont encadrées par des murs
 doorsFramedByWalls_inv :: Carte -> Bool
 doorsFramedByWalls_inv carte = foldl (\boolAcc c -> boolAcc && caseFramedByWalls c carte ) True (listFromCarte carte)
@@ -243,9 +245,7 @@ prop_carte_inv carte = (allCoordsInBounds_inv carte)
 
 
 getCase_pre :: Coord -> Carte -> Bool
-getCase_pre co carte = (cx co) >= 0 && (cy co) >= 0
-                    && (cx co) < (cartel carte)     --  x doit être strictement inférieur à la largeur de la carte
-                    && (cy co) < (carteh carte)     --  y doit être strictement inférieur à la hauteur de la carte
+getCase_pre co carte = (coordInBounds co (cartel carte) (carteh carte))   --  la coordoonee est bien dans les bornes de la carte
                     && (coordInCarte co carte)      --  co doit bien etre une cle dans table associative de la carte
 
 isTraversable_pre :: Case -> Int -> Bool
