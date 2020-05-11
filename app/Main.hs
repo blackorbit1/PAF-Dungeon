@@ -149,7 +149,7 @@ main = do
   --let gameState = M.initGameState x y 
   strcarte <- (readFile $ "maps/map1.txt")
   strmobs <- (readFile $ "maps/mob1.txt")
-  let modele = M.initModele (read strcarte) (E.setEntity (E.entiteFromChar 'M' 1) (Coord 2 1) (E.setEntity (E.entiteFromChar 'J' 0) (Coord 1 1) (E.createEnvi (read strcarte) strmobs)))
+  let modele = M.initModele (read strcarte) (E.createEnvi (read strcarte) strmobs)
 -- y = R.randomRIO(0, 380)
   -- initialisation de l'état du clavier
   let kbd = K.createKeyboard
@@ -249,7 +249,7 @@ gameLoop frameRate renderer tmap smap kbd modele = do
   endTime <- time
   let refreshTime = endTime - startTime
   let delayTime = floor (((1.0 / frameRate) - refreshTime) * 1000)
-  threadDelay $ delayTime * 1000 -- microseconds
+  threadDelay $ delayTime * 10000 -- microseconds
   endTime <- time
   let deltaTime = endTime - startTime
   -- putStrLn $ "Delta time: " <> (show (deltaTime * 1000)) <> " (ms)"
@@ -257,8 +257,6 @@ gameLoop frameRate renderer tmap smap kbd modele = do
   --- update du game state
   let modele' = M.gameStep (M.checkDead modele) kbd' deltaTime
   ---
-  putStrLn "prop_uniqueIds_inv"
-  putStrLn (show (E.prop_uniqueIds_inv (M.envi modele)))
   unless (K.keypressed KeycodeEscape kbd') (gameLoop frameRate renderer tmap smap kbd' modele')
 
 
