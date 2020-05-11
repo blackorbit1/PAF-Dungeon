@@ -70,7 +70,7 @@ prop_Modele_inv modele = C.prop_Carte_inv (carte modele)
 
 prevoir :: Entite -> [(Int,Ordre)]
 prevoir entity = case entity of
-  E.Monstre _ _ _ _ -> [(1, Haut ),(1, Bas ),(1, Droite ),(1, Gauche ),(0, Uti ), (4, Atk ), (3, Rien )]
+  E.Monstre _ _ _ _ -> [(1, Haut ),(1, Bas ),(1, Droite ),(1, Gauche ), (3, Rien )] --(0, Uti ), (4, Atk ),
   otherwise -> [(1, Haut ),(1, Bas ),(1, Droite ),(1, Gauche ),(1, Uti ), (0, Atk ), (1, Rien )]
 
 transformPonderatedList :: [(Int, Ordre)] -> [Ordre]
@@ -144,7 +144,28 @@ pickOrder orders modele = (orders!!(head (R.randomRs (0,(length orders) - 1) (sn
                         , modele { gene = ( (fst (gene modele)) + 1, R.mkStdGen (fst (gene modele))) } ) -- on met à jour le generateur avec une nouvelle seed
 
 
+handlePlayerActions :: Modele -> Entite -> Keyboard -> Coord -> Modele
+handlePlayerActions modele player kbd c
+    | (K.keypressed KeycodeZ kbd) = bouge modele player (C.Coord (C.cx c) ((C.cy c) - 1))
+    | (K.keypressed KeycodeS kbd) = bouge modele player (C.Coord (C.cx c) ((C.cy c) + 1))
+    | (K.keypressed KeycodeD kbd) = bouge modele player (C.Coord ((C.cx c) + 1) (C.cy c))
+    | (K.keypressed KeycodeQ kbd) = bouge modele player (C.Coord ((C.cx c) - 1) (C.cy c))
+    --actions à ajouter ici
+    | otherwise = modele
+
+
+gameStepAux :: Modele -> Keyboard -> [Entite] -> Modele
+gameStepAux modele kbd (entity:entities) = case E.trouveId (E.idn entity) (envi modele) of
+  Just (c, E.Joueur _ _ _ _) ->  gameStepAux (handlePlayerActions modele entity kbd c) kbd entities
+  Just (c, E.Monstre _ _ _ _) -> gameStepAux (decider (prevoir entity) modele entity) kbd entities
+  Nothing -> gameStepAux modele kbd entities
+gameStepAux modele kbd [] = modele
+
 gameStep :: RealFrac a => Modele -> Keyboard -> a -> Modele
+gameStep modele kbd deltaTime = gameStepAux modele kbd (E.listEntities (envi modele))
+
+  {-
+  gameStep :: RealFrac a => Modele -> Keyboard -> a -> Modele
 gameStep modele kbd deltaTime = case E.getPlayer (envi modele) of
   Just (c, player) ->  if (K.keypressed KeycodeZ kbd) then bouge modele player (C.Coord (C.cx c) ((C.cy c) - 1))
                   else if (K.keypressed KeycodeS kbd) then bouge modele player (C.Coord (C.cx c) ((C.cy c) + 1))
@@ -152,6 +173,7 @@ gameStep modele kbd deltaTime = case E.getPlayer (envi modele) of
                   else if (K.keypressed KeycodeQ kbd) then bouge modele player (C.Coord ((C.cx c) - 1) (C.cy c))
                   else modele
   Nothing -> modele
+  -}
 
 
 checkDead :: Modele -> Modele
