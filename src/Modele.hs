@@ -90,10 +90,10 @@ decider list m entity =
     Just c -> (
       let (ordre, modele) = pickOrder (transformPonderatedList list) m in
       case ordre of
-        Haut    -> bouge modele entity (C.Coord (C.cx c) ((C.cy c) + 1))
-        Bas     -> bouge modele entity (C.Coord (C.cx c) ((C.cy c) - 1))
-        Droite  -> bouge modele entity (C.Coord ((C.cx c) + 1) (C.cy c))
-        Gauche  -> bouge modele entity (C.Coord ((C.cx c) - 1) (C.cy c))
+        Haut    -> bouge (modele { logs = (logs modele) ++ (show entity) ++ " " ++ (show ordre) ++ "\n"}) entity (C.Coord (C.cx c) ((C.cy c) + 1))
+        Bas     -> bouge (modele { logs = (logs modele) ++ (show entity) ++ " " ++ (show ordre) ++ "\n"}) entity (C.Coord (C.cx c) ((C.cy c) - 1))
+        Droite  -> bouge (modele { logs = (logs modele) ++ (show entity) ++ " " ++ (show ordre) ++ "\n"}) entity (C.Coord ((C.cx c) + 1) (C.cy c))
+        Gauche  -> bouge (modele { logs = (logs modele) ++ (show entity) ++ " " ++ (show ordre) ++ "\n"}) entity (C.Coord ((C.cx c) - 1) (C.cy c))
         Atk -> attack modele entity c
         Uti -> modele
         Rien -> modele

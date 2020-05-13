@@ -256,7 +256,7 @@ gameLoop frameRate renderer tmap smap kbd modele = do
   -- putStrLn $ "Frame rate: " <> (show (1 / deltaTime)) <> " (frame/s)"
   --- update du game state
   let modele' = M.gameStep (M.checkDead modele) kbd' deltaTime
-  ---
+  putStrLn (M.logs modele')
   unless (K.keypressed KeycodeEscape kbd') (gameLoop frameRate renderer tmap smap kbd' modele')
 
 
