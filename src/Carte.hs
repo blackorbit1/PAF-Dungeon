@@ -152,7 +152,7 @@ isTraversable ca clearanceLevel =
         Mur -> clearanceLevel >= 40
 
 prop_isTraversable_pre :: Case -> Int -> Bool
-prop_isTraversable_pre ca clearanceLevel = clearanceLevel >= 0 -- "A FAIRE ! quand on aura les entites"
+prop_isTraversable_pre ca clearanceLevel = clearanceLevel >= 0 
 
 prop_isTraversable_post :: Case -> Int -> Bool
 prop_isTraversable_post ca entite = undefined -- etant donne que cette fonction retourne une valeur, il n'y a pas de modification à évaluer après l'appel

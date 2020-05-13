@@ -117,3 +117,4 @@ carteCarteSpec = do
 prop_carteCarte_inv :: Property
 prop_carteCarte_inv = forAll genCarte $ prop_Carte_inv
 
+

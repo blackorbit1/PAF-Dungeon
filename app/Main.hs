@@ -126,7 +126,7 @@ loadVirus rdr path tmap smap = do
 main :: IO ()
 main = do
   initializeAll
-  window <- createWindow "PafDungeon" $ defaultWindow { windowInitialSize = V2 640 480 }
+  window <- createWindow "PafDungeon" $ defaultWindow { windowInitialSize = V2 500 500 }
   renderer <- createRenderer window (-1) defaultRenderer
 
 
@@ -158,7 +158,10 @@ main = do
 
   --putStrLn (show (listFromCarte (M.carte modele)))    --debug : affiche la map de la carte
   putStrLn (show (M.carte modele))
-  putStrLn (show (E.prop_oneUncrossableMobPerCase_inv (M.envi modele)))    --debug : affiche la map de l'environnement
+  putStrLn ("Invariants du Modele : Carte + Environnement : " ++ (show (M.prop_Modele_inv modele)) ++ "\n")
+  --Juste pour voir si avant de commencer, le modele est sain
+
+
  
   --putStrLn ("doorsSurroundedByWalls_inv : " ++ (show ((read texte))))
 
@@ -249,14 +252,14 @@ gameLoop frameRate renderer tmap smap kbd modele = do
   endTime <- time
   let refreshTime = endTime - startTime
   let delayTime = floor (((1.0 / frameRate) - refreshTime) * 1000)
-  threadDelay $ delayTime * 10000 -- microseconds
+  threadDelay $ 100000 -- microseconds
   endTime <- time
   let deltaTime = endTime - startTime
-  -- putStrLn $ "Delta time: " <> (show (deltaTime * 1000)) <> " (ms)"
-  -- putStrLn $ "Frame rate: " <> (show (1 / deltaTime)) <> " (frame/s)"
+  --putStrLn $ "Delta time: " <> (show (deltaTime * 1000)) <> " (ms)"
+  --putStrLn $ "Frame rate: " <> (show (1 / deltaTime)) <> " (frame/s)"
+  --putStrLn $ "Refresh time: " <> (show (1 / refreshTime)) <> " (ms)"
   --- update du game state
   let modele' = M.gameStep (M.checkDead modele) kbd' deltaTime
-  putStrLn (M.logs modele')
   unless (K.keypressed KeycodeEscape kbd') (gameLoop frameRate renderer tmap smap kbd' modele')
 
 

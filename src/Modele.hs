@@ -70,7 +70,7 @@ prop_Modele_inv modele = C.prop_Carte_inv (carte modele)
 
 prevoir :: Entite -> [(Int,Ordre)]
 prevoir entity = case entity of
-  E.Monstre _ _ _ _ -> [(1, Haut ),(1, Bas ),(1, Droite ),(1, Gauche ), (3, Rien )] --(0, Uti ), (4, Atk ),
+  E.Monstre _ _ _ _ -> [(1, Haut ),(1, Bas ),(1, Droite ),(1, Gauche ), (2, Rien )] --(0, Uti ), (4, Atk ),
   otherwise -> [(1, Haut ),(1, Bas ),(1, Droite ),(1, Gauche ),(1, Uti ), (0, Atk ), (1, Rien )]
 
 transformPonderatedList :: [(Int, Ordre)] -> [Ordre]
@@ -90,8 +90,8 @@ decider list m entity =
     Just c -> (
       let (ordre, modele) = pickOrder (transformPonderatedList list) m in
       case ordre of
-        Haut    -> bouge (modele { logs = (logs modele) ++ (show entity) ++ " " ++ (show ordre) ++ "\n"}) entity (C.Coord (C.cx c) ((C.cy c) + 1))
-        Bas     -> bouge (modele { logs = (logs modele) ++ (show entity) ++ " " ++ (show ordre) ++ "\n"}) entity (C.Coord (C.cx c) ((C.cy c) - 1))
+        Haut    -> bouge (modele { logs = (logs modele) ++ (show entity) ++ " " ++ (show ordre) ++ "\n"}) entity (C.Coord (C.cx c) ((C.cy c) - 1))
+        Bas     -> bouge (modele { logs = (logs modele) ++ (show entity) ++ " " ++ (show ordre) ++ "\n"}) entity (C.Coord (C.cx c) ((C.cy c) + 1))
         Droite  -> bouge (modele { logs = (logs modele) ++ (show entity) ++ " " ++ (show ordre) ++ "\n"}) entity (C.Coord ((C.cx c) + 1) (C.cy c))
         Gauche  -> bouge (modele { logs = (logs modele) ++ (show entity) ++ " " ++ (show ordre) ++ "\n"}) entity (C.Coord ((C.cx c) - 1) (C.cy c))
         Atk -> attack modele entity c
@@ -140,7 +140,7 @@ attack modele entity c = (\(_, m) -> m) (foldl attackAux (2, modele) (case ( -- 
 
 
 pickOrder :: [Ordre] -> Modele -> (Ordre, Modele)
-pickOrder orders modele = (orders!!(head (R.randomRs (0,(length orders) - 1) (snd (gene modele)))) -- On renvoie une ordre aleatoirement dans la liste
+pickOrder orders modele = (orders!!((R.randomRs (0,(length orders) - 1) (snd (gene modele)))!!((R.randomRs (1,99999) (snd (gene modele)))!!1)) -- On renvoie une ordre aleatoirement dans la liste (2eme element d'une liste liste d'entiers aléatoires)
                         , modele { gene = ( (fst (gene modele)) + 1, R.mkStdGen (fst (gene modele))) } ) -- on met à jour le generateur avec une nouvelle seed
 
 

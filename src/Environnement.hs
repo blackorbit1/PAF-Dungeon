@@ -211,11 +211,7 @@ prop_oneUncrossableMobPerCase_inv env = foldl (\boolAcc (co,_) -> boolAcc && (ca
         )) True (listFromEnv env)
 
 prop_positiveStats_inv :: Envi -> Bool
-prop_positiveStats_inv env = foldl (\boolAcc (co,_) -> boolAcc && (case (getEntitiesAtCoord co env) of
-        Just entities -> foldl (\boolAcc2 entity ->  boolAcc2 && (((pvie entity) >= 0) && ((clearanceLevel entity) >= 0))) True entities
-        Nothing -> True
-        )) True (listFromEnv env)
-
+prop_positiveStats_inv env = foldl (\boolAcc entity -> boolAcc && prop_Entite_inv entity) True (listEntities env)
 
 
 hasUniqueId :: Entite -> Envi -> Bool
