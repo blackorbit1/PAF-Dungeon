@@ -1,7 +1,6 @@
 # PAF-Dungeon
 
-<img src="https://i.gyazo.com/bd6546a0026d1a4f38b9eb16190c617e.png" alt="drawing" width="400"/>
-<img src="https://i.gyazo.com/04c4539da391618e529ced715281f602.png" alt="drawing" width="300"/>
+<img src="https://i.gyazo.com/bd6546a0026d1a4f38b9eb16190c617e.png" alt="drawing" width="400"/><img src="https://i.gyazo.com/04c4539da391618e529ced715281f602.png" alt="drawing" width="300"/>
 
 ## Projet de PAF (2019 - 2020) - Dungeon Crawling
 
