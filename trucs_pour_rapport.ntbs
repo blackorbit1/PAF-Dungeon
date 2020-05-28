@@ -1,0 +1,11 @@
+
+
+Faire attention à préciser :
+- à la place de plusieurs fonctions "tour" on a une fonction reccursive gameStepAux
+  qui fait l'action pour chaque entitée de la liste d'entitée.
+
+Trucs Haskelliens à placer :
+- on a utilisé les foldl à fond + en utilisant des lambdas
+- etha contraction (instance de show) -> instanciation de classe algébrique
+- Utilisation de maybe systématique pour les getters
+

@@ -9,7 +9,10 @@ import qualified Environnement as E
 import Keyboard (Keyboard)
 import qualified Keyboard as K
 
-import qualified Data.Map.Strict as M
+import Modele (Modele)
+import qualified Modele as M
+
+import qualified Data.Map.Strict as Map
 
 --import StdGen
 
@@ -17,8 +20,13 @@ import qualified Data.Map.Strict as M
 
 data Etat =   Perdu 
             | Gagne
-            | Tour {  num_tour :: Int, carte_tour :: C.Carte
-                    , envi_tour :: E.Envi 
-                    --, gen_tour :: StdGen 
-                    , obj_tour :: (M.Map Int E.Entite), journal_tour :: String}
+            | Tour      { num_tour :: Int
+                        , modele :: M.Modele
+                        , journal_tour :: String }
 
+
+
+etat_tour :: Etat -> Keyboard -> Etat
+etat_tour state kbd = case state of
+        Tour -> 
+        
