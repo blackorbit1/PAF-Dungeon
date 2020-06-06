@@ -120,7 +120,9 @@ getCoord (c, _) = c
 listFromCarte :: Carte -> [(Coord,Case)]
 listFromCarte carte = (sortBy (comparing fst) (M.assocs (carte_contenu carte) ))
 
-
+getExitCoord :: [(Coord,Case)] -> Maybe Coord
+getExitCoord ((co,ca):tail) = if (getEntranceOrExit ca) == "s" then Just co else getExitCoord tail
+getExitCoord [] = Nothing
 
 
 ---------------------OPERATIONS----------------------

@@ -75,15 +75,25 @@ strFromEntite ca = case ca of
 listFromEnv :: Envi -> [(Coord, [Entite])]
 listFromEnv env = (sortBy (comparing fst) (M.assocs (contenu_envi env) ))
 
-getPlayerAux :: Entite -> Bool
-getPlayerAux entity = case entity of
+isPlayer :: Entite -> Bool
+isPlayer entity = case entity of
         Joueur _ _ _ _ -> True
         _ -> False
 
+getPlayerEntity :: Envi -> Maybe Entite
+getPlayerEntity env = case getPlayer env of
+        Just (_,en) -> Just en
+        Nothing -> Nothing
+
 getPlayer :: Envi -> Maybe (Coord, Entite)
-getPlayer env = case filter (getPlayerAux) (listEntities env) of
+getPlayer env = case filter (isPlayer) (listEntities env) of
         [] -> Nothing
         playerList -> (trouveId (idn (head playerList)) env)
+
+getPlayerCoord :: Envi -> Maybe Coord
+getPlayerCoord env = case getPlayer env of
+        Just (co,p) -> Just co
+        Nothing -> Nothing
 
 listEntities :: Envi -> [Entite]
 listEntities env = foldl (\entities (_,entlist) -> entities <> entlist) [] (listFromEnv env)
