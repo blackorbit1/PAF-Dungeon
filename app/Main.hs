@@ -155,8 +155,8 @@ main = do
   (tmap', smap') <- loadPorNSOuv renderer "assets/porte_ouverte_ns.png" tmap' smap'
   (tmap', smap') <- loadEntrance renderer "assets/entrance.png" tmap' smap'
   (tmap', smap') <- loadExit renderer "assets/exit.png" tmap' smap'
-  (tmap', smap') <- loadWin renderer "assets/gagne.png" tmap' smap'
-  (tmap', smap') <- loadLoose renderer "assets/perdu.png" tmap' smap'
+  (tmap', smap') <- loadWin renderer "assets/win.png" tmap' smap'
+  (tmap', smap') <- loadLoose renderer "assets/loose.png" tmap' smap'
     -- chargement du personnage
   (tmap', smap') <- loadPerso renderer "assets/perso.png" tmap' smap'
   -- chargement du virus
@@ -247,7 +247,7 @@ gameLoop frameRate renderer tmap smap kbd state = do
           C.Sortie              -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "exit") smap) x y)
           _                     -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "mur") smap) x y)
     ))
-    (C.listFromCarte (M.carte (Engine.modele state)) 
+    (C.listFromCarte (M.carte (Engine.modele state))) 
 
 
 
@@ -262,7 +262,7 @@ gameLoop frameRate renderer tmap smap kbd state = do
         --_ -> S.displaySprite renderer tmap S.createEmptySprite
         )) entites
 
-    )) (E.listFromEnv (M.envi (Engine.modele state)) 
+    )) (E.listFromEnv (M.envi (Engine.modele state))) 
 
   
   
@@ -280,10 +280,11 @@ gameLoop frameRate renderer tmap smap kbd state = do
   --- update du game state
   let newState = Engine.etat_tour state kbd' deltaTime
   case newState of
-    Engine.Gagne -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "gagne") smap) x y)
-    Engine.Perdu -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "perdu") smap) x y)
-    
+    Engine.Gagne -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "gagne") smap) 250 250)
+    Engine.Perdu -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "perdu") smap) 250 250)
+    _ -> return ()
 
+  putStrLn (show (modele newState))
   unless (K.keypressed KeycodeEscape kbd') (gameLoop frameRate renderer tmap smap kbd' newState)
 
 
