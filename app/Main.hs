@@ -43,6 +43,9 @@ import qualified System.Random as R
 import Carte
 import qualified Carte as C
 
+import Moteur
+import qualified Moteur as Engine
+
 
 import Environnement
 import qualified Environnement as E
@@ -119,6 +122,20 @@ loadVirus rdr path tmap smap = do
   let smap' = SM.addSprite (SpriteId "virus") sprite smap
   return (tmap', smap')
 
+loadWin :: Renderer-> FilePath -> TextureMap -> SpriteMap -> IO (TextureMap, SpriteMap)
+loadWin rdr path tmap smap = do
+  tmap' <- TM.loadTexture rdr path (TextureId "gagne") tmap
+  let sprite = S.defaultScale $ S.addImage S.createEmptySprite $ S.createImage (TextureId "gagne") (S.mkArea 0 0 50 50)
+  let smap' = SM.addSprite (SpriteId "gagne") sprite smap
+  return (tmap', smap')
+
+loadLoose :: Renderer-> FilePath -> TextureMap -> SpriteMap -> IO (TextureMap, SpriteMap)
+loadLoose rdr path tmap smap = do
+  tmap' <- TM.loadTexture rdr path (TextureId "perdu") tmap
+  let sprite = S.defaultScale $ S.addImage S.createEmptySprite $ S.createImage (TextureId "perdu") (S.mkArea 0 0 250 250)
+  let smap' = SM.addSprite (SpriteId "perdu") sprite smap
+  return (tmap', smap')
+
   
 
 
@@ -138,6 +155,8 @@ main = do
   (tmap', smap') <- loadPorNSOuv renderer "assets/porte_ouverte_ns.png" tmap' smap'
   (tmap', smap') <- loadEntrance renderer "assets/entrance.png" tmap' smap'
   (tmap', smap') <- loadExit renderer "assets/exit.png" tmap' smap'
+  (tmap', smap') <- loadWin renderer "assets/gagne.png" tmap' smap'
+  (tmap', smap') <- loadLoose renderer "assets/perdu.png" tmap' smap'
     -- chargement du personnage
   (tmap', smap') <- loadPerso renderer "assets/perso.png" tmap' smap'
   -- chargement du virus
@@ -149,7 +168,7 @@ main = do
   --let gameState = M.initGameState x y 
   strcarte <- (readFile $ "maps/map1.txt")
   strmobs <- (readFile $ "maps/mob1.txt")
-  let modele = M.initModele (read strcarte) (E.createEnvi (read strcarte) strmobs)
+  let engineState = Tour 0 (M.initModele (read strcarte) (E.createEnvi (read strcarte) strmobs)) ""
 -- y = R.randomRIO(0, 380)
   -- initialisation de l'état du clavier
   let kbd = K.createKeyboard
@@ -157,15 +176,15 @@ main = do
 
 
   --putStrLn (show (listFromCarte (M.carte modele)))    --debug : affiche la map de la carte
-  putStrLn (show (M.carte modele))
-  putStrLn ("Invariants du Modele : Carte + Environnement : " ++ (show (M.prop_Modele_inv modele)) ++ "\n")
+  putStrLn (show (M.carte (Engine.modele engineState)))
+  putStrLn ("Invariants du Modele : Carte + Environnement : " ++ (show (M.prop_Modele_inv (Engine.modele engineState))) ++ "\n")
   --Juste pour voir si avant de commencer, le modele est sain
 
 
  
   --putStrLn ("doorsSurroundedByWalls_inv : " ++ (show ((read texte))))
 
-  gameLoop 60 renderer tmap' smap' kbd modele
+  gameLoop 60 renderer tmap' smap' kbd engineState
 
 {-
 data RendererInfos = RendererInfos  { renderer :: Renderer
@@ -194,8 +213,8 @@ displayCarte renderer carte = foldr displayCarteAux renderer (Map.assocs (carte_
 -}
 
 
-gameLoop :: (RealFrac a, Show a) => a -> Renderer -> TextureMap -> SpriteMap -> Keyboard -> Modele -> IO ()
-gameLoop frameRate renderer tmap smap kbd modele = do
+gameLoop :: (RealFrac a, Show a) => a -> Renderer -> TextureMap -> SpriteMap -> Keyboard -> Etat -> IO ()
+gameLoop frameRate renderer tmap smap kbd state = do
   startTime <- time
   events <- pollEvents
   let kbd' = K.handleEvents events kbd
@@ -228,7 +247,7 @@ gameLoop frameRate renderer tmap smap kbd modele = do
           C.Sortie              -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "exit") smap) x y)
           _                     -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "mur") smap) x y)
     ))
-    (C.listFromCarte (M.carte modele)) 
+    (C.listFromCarte (M.carte (Engine.modele state)) 
 
 
 
@@ -243,7 +262,7 @@ gameLoop frameRate renderer tmap smap kbd modele = do
         --_ -> S.displaySprite renderer tmap S.createEmptySprite
         )) entites
 
-    )) (E.listFromEnv (M.envi modele)) 
+    )) (E.listFromEnv (M.envi (Engine.modele state)) 
 
   
   
@@ -259,7 +278,12 @@ gameLoop frameRate renderer tmap smap kbd modele = do
   --putStrLn $ "Frame rate: " <> (show (1 / deltaTime)) <> " (frame/s)"
   --putStrLn $ "Refresh time: " <> (show (1 / refreshTime)) <> " (ms)"
   --- update du game state
-  let modele' = M.gameStep (M.checkDead modele) kbd' deltaTime
-  unless (K.keypressed KeycodeEscape kbd') (gameLoop frameRate renderer tmap smap kbd' modele')
+  let newState = Engine.etat_tour state kbd' deltaTime
+  case newState of
+    Engine.Gagne -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "gagne") smap) x y)
+    Engine.Perdu -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "perdu") smap) x y)
+    
+
+  unless (K.keypressed KeycodeEscape kbd') (gameLoop frameRate renderer tmap smap kbd' newState)
 
 

@@ -176,10 +176,6 @@ gameStep modele kbd deltaTime = case E.getPlayer (envi modele) of
   -}
 
 
-checkDead :: Modele -> Modele
-checkDead modele = modele
-
-
 
 
 

@@ -20,7 +20,6 @@ import qualified Data.Map.Strict as Map
 
 data Etat =   Perdu 
             | Gagne
-<<<<<<< HEAD
             | Tour {  num_tour :: Int
                 , modele :: Modele.Modele
                 , journal_tour :: String}
@@ -37,15 +36,4 @@ etat_tour state kbd deltaT = case state of
             else state {num_tour = (num_tour state) + 1 , modele = m , journal_tour = (M.logs m)}
     _ -> state
 
-=======
-            | Tour      { num_tour :: Int
-                        , modele :: M.Modele
-                        , journal_tour :: String }
-
-
->>>>>>> 3b3e850ae3d54baf326b8959b8f81b5f92983dd9
-
-etat_tour :: Etat -> Keyboard -> Etat
-etat_tour state kbd = case state of
-        Tour -> 
         
