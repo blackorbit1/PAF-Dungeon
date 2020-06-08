@@ -57,9 +57,10 @@ keycodeName KeycodeW = 'w'
 keycodeName KeycodeX = 'x'
 keycodeName KeycodeY = 'y'
 keycodeName KeycodeZ = 'z'
+keycodeName KeycodeSpace = ' '
 keycodeName _ = '-'
 
--- | Vérifies sir le *keycode* spécificé est actuellement
+-- | Vérifies si le *keycode* spécificé est actuellement
 -- | actif sur le clavier.
 keypressed :: Keycode -> Keyboard -> Bool
 keypressed kc kbd = S.member kc kbd

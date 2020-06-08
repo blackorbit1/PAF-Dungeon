@@ -16,6 +16,7 @@ data Envi = Envi { contenu_envi :: M.Map Coord [Entite] }
 
 data Entite = Monstre {idn :: Int , pvie :: Int, clearanceLevel :: Int, isFranchissable :: Bool}
             | Joueur {idn :: Int , pvie :: Int, clearanceLevel :: Int, isFranchissable :: Bool}
+            | Coffre {idn :: Int, isFranchissable :: Bool}
     deriving (Eq, Show)
 
 
@@ -65,12 +66,14 @@ entiteFromChar :: Char -> Int -> Entite
 entiteFromChar caractere idn = case caractere of
     'J' -> Joueur idn 300 10 False
     'M' -> Monstre idn 100 20 False
+    'C' -> Coffre idn True
 
 -- Renvoie le caractère correspondant à l'Entite
 strFromEntite :: Entite -> String
 strFromEntite ca = case ca of
     Joueur _ _ _ _ -> "J"
     Monstre _ _ _ _ -> "M"
+    Coffre _ _ -> "C"
 
 listFromEnv :: Envi -> [(Coord, [Entite])]
 listFromEnv env = (sortBy (comparing fst) (M.assocs (contenu_envi env) ))
@@ -102,7 +105,7 @@ listEntities env = foldl (\entities (_,entlist) -> entities <> entlist) [] (list
 franchissableEnv :: Coord -> Envi -> Bool
 franchissableEnv coord env = case (getEntitiesAtCoord coord env) of
         Just entities -> foldl (\boolAcc entity -> (boolAcc && (isFranchissable entity))) True entities
-        Nothing -> False
+        Nothing -> False -- ne devrait jamais arriver si la map de l'env est bien construite
 
 prop_franchissableEnv_pre :: Coord -> Envi -> Bool
 prop_franchissableEnv_pre coord env = prop_positiveCoord_inv coord
@@ -255,7 +258,9 @@ prop_Envi_inv env = (prop_allCoordsPositive_inv env)
 
 
 prop_Entite_inv :: Entite -> Bool
-prop_Entite_inv entity =   ((idn entity) >= 0)
-                        && ((pvie entity) >= 0)
-                        && ((clearanceLevel entity) >= 0)
+prop_Entite_inv entity =   case entity of
+        Coffre _ _ -> (idn entity) >= 0
+        _ ->    ((idn entity) >= 0)                     --Joueur et Monstre
+                && ((pvie entity) >= 0)
+                && ((clearanceLevel entity) >= 0)
 
