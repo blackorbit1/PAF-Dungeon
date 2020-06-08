@@ -64,7 +64,7 @@ prop_createEnvi_post env = prop_Envi_inv env  -- meme question que pour la post 
 -- Cree une Entite a partir d'un caractère
 entiteFromChar :: Char -> Int -> Entite
 entiteFromChar caractere idn = case caractere of
-    'J' -> Joueur idn 400 10 False False False
+    'J' -> Joueur idn 40000 10 False False False
     'M' -> Monstre idn 100 20 False False
     'C' -> Coffre idn True False
     'E' -> Coffre idn True False
@@ -229,13 +229,13 @@ changeAttackingState :: Entite -> Envi -> Coord -> Bool -> Envi
 changeAttackingState entity env coord b = let env2 = rmEntById (idn entity) env in
                                       (setEntity (entity {attacking = b }) coord env2)
 
-getAsNotAttacking :: Entite -> Entite
-getAsNotAttacking entity@(Coffre _ _ _) = entity 
-getAsNotAttacking entity = entity {attacking = False }
+setAsNotAttacking :: Entite -> Entite
+setAsNotAttacking entity@(Coffre _ _ _) = entity 
+setAsNotAttacking entity = entity {attacking = False }
 
 setAllAsNotAttackingAux :: (Coord, [Entite]) -> (Coord, [Entite])
 setAllAsNotAttackingAux (co, []) = (co, [])
-setAllAsNotAttackingAux (co, entities) = (co, (map getAsNotAttacking entities))
+setAllAsNotAttackingAux (co, entities) = (co, (map setAsNotAttacking entities))
 
 setAllAsNotAttacking :: Envi -> Envi
 setAllAsNotAttacking env = Envi (M.fromList (map setAllAsNotAttackingAux (listFromEnv env)))
@@ -245,26 +245,19 @@ cleanAux entity = case entity of
         Monstre _ _ _ _ _-> ((pvie entity) > 0)
         _ -> True
 
-{-
-
-
-changeAttackingState :: Entite -> Envi -> Coord -> Bool -> Envi
-changeAttackingState entity env coord b = let env = rmEntById (idn entity) env in
-                                      (setEntity (entity {attacking = b }) coord env)
-
-setAsNotAttacking :: Envi -> Entite -> Envi
-setAsNotAttacking env entity = case ((entityCoord entity env), (getEntitiesAtCoord)) of
-        (Just c, Just entities) -> changeAttackingState entity env c False
-        _ -> env
-
-setAllAsNotAttacking :: Envi -> Envi
-setAllAsNotAttacking env = (M.map (\ entities -> (foldl setAsNotAttacking env entities)) (contenu_envi env))
-
--}
-
 
 cleanUpEntities :: Envi -> Envi
 cleanUpEntities env = setAllAsNotAttacking (Envi (M.map (\ entities -> (filter cleanAux entities)) (contenu_envi env)))
+
+openChest :: Int -> Envi -> Envi
+openChest idChest env = case trouveId idChest env of
+        Just (co,chest) -> setEntity (chest {open = True}) co (rmEntById idChest env)
+        Nothing -> env
+
+giveKeyToPlayer :: Envi -> Envi
+giveKeyToPlayer env = case getPlayer env of
+        Just (co,player) -> setEntity (player {hasKey = True}) co (rmEntById (idn player) env)
+        Nothing -> env
 
 ---------------------INVARIANTS----------------------
 

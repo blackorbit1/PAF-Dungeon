@@ -72,7 +72,7 @@ prevoir entity env = case entity of
       case (E.getPlayerCoord env, E.entityCoord entity env) of
         (Just coP, Just coM) -> ((abs ((C.cx coP) - (C.cx coM))) <= 2) && ((abs ((C.cy coP) - (C.cy coM))) <= 1)
         (_, _) -> False )
-    then [(1, Haut ),(1, Bas ),(1, Droite ),(1, Gauche ), (2, Rien ), (0, Uti ), (40, Atk )]
+    then [(1, Haut ),(1, Bas ),(1, Droite ),(1, Gauche ), (2, Rien ), (0, Uti ), (8, Atk )]
     else [(1, Haut ),(1, Bas ),(1, Droite ),(1, Gauche ), (2, Rien ), (0, Uti ), (0, Atk )]
   otherwise -> [(1, Haut ),(1, Bas ),(1, Droite ),(1, Gauche ),(1, Uti ), (0, Atk ), (1, Rien )]
 
@@ -82,6 +82,9 @@ transformPonderatedList ((0,ordre):xs) = transformPonderatedList xs
 transformPonderatedList ((coef,ordre):xs) = ordre:(transformPonderatedList ((coef-1,ordre):xs))
 transformPonderatedList [] = []
 
+pickOrder :: [Ordre] -> Modele -> (Ordre, Modele)
+pickOrder orders modele = (orders!!((R.randomRs (0,(length orders) - 1) (snd (gene modele)))!!((R.randomRs (1,99999) (snd (gene modele)))!!1)) -- On renvoie une ordre aleatoirement dans la liste (2eme element d'une liste liste d'entiers aléatoires)
+                        , modele { gene = ( (fst (gene modele)) + 1, R.mkStdGen (fst (gene modele))) } ) -- on met à jour le generateur avec une nouvelle seed
 
 decider :: [(Int, Ordre)] -> Modele -> Entite -> Modele
 decider list m entity = 
@@ -141,11 +144,22 @@ attack modele entity c = (\(_, m@(Modele _ env _ _ _) ) -> m { envi = (E.changeA
      ))
 
 
+tryOpenDoor :: Coord -> Carte -> Carte
+tryOpenDoor coord carte = case C.getCase coord carte of
+    Just (C.Porte _ _) -> C.openDoor coord carte
+    _ -> carte
 
 
-pickOrder :: [Ordre] -> Modele -> (Ordre, Modele)
-pickOrder orders modele = (orders!!((R.randomRs (0,(length orders) - 1) (snd (gene modele)))!!((R.randomRs (1,99999) (snd (gene modele)))!!1)) -- On renvoie une ordre aleatoirement dans la liste (2eme element d'une liste liste d'entiers aléatoires)
-                        , modele { gene = ( (fst (gene modele)) + 1, R.mkStdGen (fst (gene modele))) } ) -- on met à jour le generateur avec une nouvelle seed
+
+playerUse :: Modele -> Entite -> Coord -> Modele
+playerUse modele player c = if (E.hasKey player) then
+  let carte1 = tryOpenDoor (C.Coord (C.cx c) ((C.cy c) - 1)) (carte modele) in
+  let carte2 = tryOpenDoor (C.Coord (C.cx c) ((C.cy c) + 1)) carte1 in
+  let carte3 = tryOpenDoor (C.Coord ((C.cx c) + 1) (C.cy c)) carte2 in
+  let carte4 = tryOpenDoor (C.Coord ((C.cx c) - 1) (C.cy c)) carte3 in
+  modele { carte = carte4 }
+  else modele
+
 
 
 handlePlayerActions :: Modele -> Entite -> Keyboard -> Coord -> Modele
@@ -155,16 +169,22 @@ handlePlayerActions modele player kbd c
     | (K.keypressed KeycodeD kbd) = bouge modele player (C.Coord ((C.cx c) + 1) (C.cy c))
     | (K.keypressed KeycodeQ kbd) = bouge modele player (C.Coord ((C.cx c) - 1) (C.cy c))
     | (K.keypressed KeycodeSpace kbd) = attack modele player c
-    -- | (k.keypressed KeycodeF kbd) = 
+    | (K.keypressed KeycodeF kbd) = playerUse modele player c
 
     --actions à ajouter ici
     | otherwise = modele
+
+handleChest :: Coord -> Entite -> Modele -> Modele
+handleChest coord chest modele = case E.getPlayerCoord (envi modele) of
+  Just c -> if coord == c then modele { envi = (E.openChest (E.idn chest) (E.giveKeyToPlayer (envi modele))) } else modele
+  Nothing -> modele
 
 
 gameStepAux :: Modele -> Keyboard -> [Entite] -> Modele
 gameStepAux modele kbd (entity:entities) = case E.trouveId (E.idn entity) (envi modele) of
   Just (c, E.Joueur _ _ _ _ _ _) -> gameStepAux (handlePlayerActions modele entity kbd c) kbd entities
   Just (c, E.Monstre _ _ _ _ _) -> gameStepAux (decider (prevoir entity (envi modele)) modele entity) kbd entities
+  Just (c, E.Coffre _ _ False) -> gameStepAux (handleChest c entity modele) kbd entities
   _ -> gameStepAux modele kbd entities
 gameStepAux modele kbd [] = modele
 
