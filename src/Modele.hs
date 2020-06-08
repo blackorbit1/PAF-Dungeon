@@ -60,8 +60,6 @@ prop_bouge_post :: Modele -> Entite -> Coord -> Bool
 prop_bouge_post modele entity coord = (E.prop_bougeById_post (E.idn entity) coord (envi modele) (carte modele))
 
 
-
-
 prop_Modele_inv :: Modele -> Bool
 prop_Modele_inv modele = C.prop_Carte_inv (carte modele)
                       && E.prop_Envi_inv (envi modele)
@@ -117,13 +115,15 @@ mml a b = case (a,b) of
 
 attackAux :: (Int, Modele) -> Entite -> (Int, Modele)
 attackAux (damage, modele) entity@(E.Monstre idnn pviee _ _) = case (entityCoord entity modele) of 
-  Just coord -> (damage, modele { envi = (E.setEntity (entity { E.pvie = pviee - damage }) coord (E.rmEntById idnn (envi modele))) } )
+  Just coord -> (damage, modele { envi = (E.setEntity (E.removePvie entity damage) coord (E.rmEntById idnn (envi modele))) } )
   Nothing -> (damage, modele)                      -- dans le cas où l'entitee ne correspond à aucunes coordonnées dans l'environnement
 attackAux (damage, modele) _ = (damage, modele) -- dans le cas où c'est une entitee qui ne peut pas prendre de dommages
 
 
+
+
 attack :: Modele -> Entite -> Coord -> Modele
-attack modele entity c = (\(_, m) -> m) (foldl attackAux (2, modele) (case ( -- ici, l'attaque fait 2 de degats
+attack modele entity c = (\(_, m) -> m) (foldl attackAux (50, modele) (case ( -- ici, l'attaque fait 2 de degats
   (E.getEntitiesAtCoord (C.Coord (C.cx c) ((C.cy c) + 1)) (envi modele) )
   `mml` (E.getEntitiesAtCoord (C.Coord (C.cx c) ((C.cy c) - 1)) (envi modele) )
   `mml` (E.getEntitiesAtCoord (C.Coord ((C.cx c) + 1) (C.cy c)) (envi modele) )
@@ -150,6 +150,9 @@ handlePlayerActions modele player kbd c
     | (K.keypressed KeycodeS kbd) = bouge modele player (C.Coord (C.cx c) ((C.cy c) + 1))
     | (K.keypressed KeycodeD kbd) = bouge modele player (C.Coord ((C.cx c) + 1) (C.cy c))
     | (K.keypressed KeycodeQ kbd) = bouge modele player (C.Coord ((C.cx c) - 1) (C.cy c))
+    | (K.keypressed KeycodeSpace kbd) = attack modele player c
+    -- | (k.keypressed KeycodeF kbd) = 
+
     --actions à ajouter ici
     | otherwise = modele
 
@@ -158,63 +161,10 @@ gameStepAux :: Modele -> Keyboard -> [Entite] -> Modele
 gameStepAux modele kbd (entity:entities) = case E.trouveId (E.idn entity) (envi modele) of
   Just (c, E.Joueur _ _ _ _) ->  gameStepAux (handlePlayerActions modele entity kbd c) kbd entities
   Just (c, E.Monstre _ _ _ _) -> gameStepAux (decider (prevoir entity) modele entity) kbd entities
-  Nothing -> gameStepAux modele kbd entities
+  _ -> gameStepAux modele kbd entities
 gameStepAux modele kbd [] = modele
+
+-- TODO !!!!!!!!!!!!!!!!! Faire un cleanup de toutes les entités qui ont 0 pts de vie
 
 gameStep :: RealFrac a => Modele -> Keyboard -> a -> Modele
 gameStep modele kbd deltaTime = gameStepAux modele kbd (E.listEntities (envi modele))
-
-  {-
-  gameStep :: RealFrac a => Modele -> Keyboard -> a -> Modele
-gameStep modele kbd deltaTime = case E.getPlayer (envi modele) of
-  Just (c, player) ->  if (K.keypressed KeycodeZ kbd) then bouge modele player (C.Coord (C.cx c) ((C.cy c) - 1))
-                  else if (K.keypressed KeycodeS kbd) then bouge modele player (C.Coord (C.cx c) ((C.cy c) + 1))
-                  else if (K.keypressed KeycodeD kbd) then bouge modele player (C.Coord ((C.cx c) + 1) (C.cy c))
-                  else if (K.keypressed KeycodeQ kbd) then bouge modele player (C.Coord ((C.cx c) - 1) (C.cy c))
-                  else modele
-  Nothing -> modele
-  -}
-
-
-checkDead :: Modele -> Modele
-checkDead modele = modele
-
-
-
-
-
-{-
-
-moveLeft :: Modele -> Modele
-moveLeft gs@(GameState px _ sp _ _ _) | px > 0 = gs { persoX = px - sp }
-                                | otherwise = gs
-
-moveRight :: Modele -> Modele
-moveRight gs@(GameState px _ sp _ _ _) | px < 540 = gs { persoX = px + sp }
-                                 | otherwise = gs
-
-                              
-moveUp :: Modele -> Modele
-moveUp gs@(GameState _ py sp _ _ _) | py > 0 = gs { persoY = py - sp }
-                              | otherwise = gs
-
-moveDown :: Modele -> Modele
-moveDown gs@(GameState _ py sp _ _ _) | py < 380 = gs { persoY = py + sp }
-                                | otherwise = gs
-
-checkDead :: Modele -> Modele
-checkDead gs@(GameState px py _ vx vy _) 
-  | (sqrt (fromIntegral (((px - vx) * (px - vx)) + ((py - vy) * (py - vy)) ))) <= 100 = gs {win = True}
-  | otherwise =  gs
-
-
-gameStep :: RealFrac a => GameState -> Keyboard -> a -> GameState
-gameStep gstate kbd deltaTime 
-  | K.keypressed KeycodeZ kbd = moveUp gstate
-  | K.keypressed KeycodeQ kbd = moveLeft gstate
-  | K.keypressed KeycodeS kbd = moveDown gstate
-  | K.keypressed KeycodeD kbd = moveRight gstate
-  | otherwise = gstate
-
-
--}

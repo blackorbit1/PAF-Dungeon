@@ -16,6 +16,7 @@ data Envi = Envi { contenu_envi :: M.Map Coord [Entite] }
 
 data Entite = Monstre {idn :: Int , pvie :: Int, clearanceLevel :: Int, isFranchissable :: Bool}
             | Joueur {idn :: Int , pvie :: Int, clearanceLevel :: Int, isFranchissable :: Bool}
+            | Coffre {idn :: Int, isFranchissable :: Bool}
     deriving (Eq, Show)
 
 
@@ -65,25 +66,37 @@ entiteFromChar :: Char -> Int -> Entite
 entiteFromChar caractere idn = case caractere of
     'J' -> Joueur idn 300 10 False
     'M' -> Monstre idn 100 20 False
+    'C' -> Coffre idn True
 
 -- Renvoie le caractère correspondant à l'Entite
 strFromEntite :: Entite -> String
 strFromEntite ca = case ca of
     Joueur _ _ _ _ -> "J"
     Monstre _ _ _ _ -> "M"
+    Coffre _ _ -> "C"
 
 listFromEnv :: Envi -> [(Coord, [Entite])]
 listFromEnv env = (sortBy (comparing fst) (M.assocs (contenu_envi env) ))
 
-getPlayerAux :: Entite -> Bool
-getPlayerAux entity = case entity of
+isPlayer :: Entite -> Bool
+isPlayer entity = case entity of
         Joueur _ _ _ _ -> True
         _ -> False
 
+getPlayerEntity :: Envi -> Maybe Entite
+getPlayerEntity env = case getPlayer env of
+        Just (_,en) -> Just en
+        Nothing -> Nothing
+
 getPlayer :: Envi -> Maybe (Coord, Entite)
-getPlayer env = case filter (getPlayerAux) (listEntities env) of
+getPlayer env = case filter (isPlayer) (listEntities env) of
         [] -> Nothing
         playerList -> (trouveId (idn (head playerList)) env)
+
+getPlayerCoord :: Envi -> Maybe Coord
+getPlayerCoord env = case getPlayer env of
+        Just (co,p) -> Just co
+        Nothing -> Nothing
 
 listEntities :: Envi -> [Entite]
 listEntities env = foldl (\entities (_,entlist) -> entities <> entlist) [] (listFromEnv env)
@@ -92,7 +105,7 @@ listEntities env = foldl (\entities (_,entlist) -> entities <> entlist) [] (list
 franchissableEnv :: Coord -> Envi -> Bool
 franchissableEnv coord env = case (getEntitiesAtCoord coord env) of
         Just entities -> foldl (\boolAcc entity -> (boolAcc && (isFranchissable entity))) True entities
-        Nothing -> False
+        Nothing -> False -- ne devrait jamais arriver si la map de l'env est bien construite
 
 prop_franchissableEnv_pre :: Coord -> Envi -> Bool
 prop_franchissableEnv_pre coord env = prop_positiveCoord_inv coord
@@ -152,6 +165,20 @@ prop_setEntity_post entity coord env = ((trouveId (idn entity) env) == (Just (co
 
 
 
+removePvie :: Entite -> Int -> Entite           --ne sera jamais sur sur autre chose qu'un joueur ou un monstre
+removePvie ent deg = ent { E.pvie = (max ((pvie ent) - deg) 0 ) }
+
+prop_removePvie_pre :: Entite -> Int -> Bool
+prop_removePvie_pre ent deg = (deg >= 0) && (case ent of
+        Joueur _ _ _ _ -> True
+        Monstre _ _ _ _ -> True
+        _ -> False)
+
+prop_removePvie_post :: Entite -> Int -> Bool
+prop_removePvie_post ent deg = prop_Entite_inv ent
+
+
+
 rmEntById :: Int -> Envi -> Envi
 rmEntById idn env = case trouveId idn env of
         Just (coord, en) ->  Envi(M.insert coord (delete en (case (getEntitiesAtCoord coord env) of
@@ -165,6 +192,8 @@ prop_rmEntById_pre idn env = (idn > 0) && ((trouveId idn env) /= Nothing )
 
 prop_rmEntById_post :: Int -> Envi -> Bool 
 prop_rmEntById_post idn env = (idn > 0) && ((trouveId idn env) == Nothing )
+
+
 
 
 bougeById :: Int -> Coord -> Envi -> Carte -> Envi
@@ -245,7 +274,9 @@ prop_Envi_inv env = (prop_allCoordsPositive_inv env)
 
 
 prop_Entite_inv :: Entite -> Bool
-prop_Entite_inv entity =   ((idn entity) >= 0)
-                        && ((pvie entity) >= 0)
-                        && ((clearanceLevel entity) >= 0)
+prop_Entite_inv entity =   case entity of
+        Coffre _ _ -> (idn entity) >= 0
+        _ ->    ((idn entity) >= 0)                     --Joueur et Monstre
+                && ((pvie entity) >= 0)
+                && ((clearanceLevel entity) >= 0)
 

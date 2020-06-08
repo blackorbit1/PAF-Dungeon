@@ -120,7 +120,9 @@ getCoord (c, _) = c
 listFromCarte :: Carte -> [(Coord,Case)]
 listFromCarte carte = (sortBy (comparing fst) (M.assocs (carte_contenu carte) ))
 
-
+getExitCoord :: [(Coord,Case)] -> Maybe Coord
+getExitCoord ((co,ca):tail) = if (getEntranceOrExit ca) == "s" then Just co else getExitCoord tail
+getExitCoord [] = Nothing
 
 
 ---------------------OPERATIONS----------------------
@@ -223,6 +225,24 @@ prop_closeDoor_post co carte = (\new_carte -> (noChangesExceptAtCoord carte co n
     Just (Porte _ Fermee) -> True
     _ -> False )) (closeDoor co carte)
 
+
+
+
+{-
+-- renvoie "e" si la case est une entrée, "s" si c'est une sortie et rien sinon
+getEntranceOrExit :: Case -> String
+getEntranceOrExit ca 
+    | ca == Entree = "e"
+    | ca == Sortie = "s"
+    | otherwise = ""
+
+-- vérifie qu'une carte donnée ne contient 1 seule entrée et 1 seule sortie
+prop_entranceExit_inv :: Carte -> Bool
+prop_entranceExit_inv carte = case foldl (\strAcc (_,ca) -> strAcc ++ (getEntranceOrExit ca)) "" (listFromCarte carte) of
+    "es" -> True
+    "se" -> True
+    _ -> False
+-}
 
 
 

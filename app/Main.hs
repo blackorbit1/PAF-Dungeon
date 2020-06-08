@@ -43,6 +43,9 @@ import qualified System.Random as R
 import Carte
 import qualified Carte as C
 
+import Moteur
+import qualified Moteur as Engine
+
 
 import Environnement
 import qualified Environnement as E
@@ -119,6 +122,27 @@ loadVirus rdr path tmap smap = do
   let smap' = SM.addSprite (SpriteId "virus") sprite smap
   return (tmap', smap')
 
+loadWin :: Renderer-> FilePath -> TextureMap -> SpriteMap -> IO (TextureMap, SpriteMap)
+loadWin rdr path tmap smap = do
+  tmap' <- TM.loadTexture rdr path (TextureId "gagne") tmap
+  let sprite = S.defaultScale $ S.addImage S.createEmptySprite $ S.createImage (TextureId "gagne") (S.mkArea 0 0 250 250)
+  let smap' = SM.addSprite (SpriteId "gagne") sprite smap
+  return (tmap', smap')
+
+loadLoose :: Renderer-> FilePath -> TextureMap -> SpriteMap -> IO (TextureMap, SpriteMap)
+loadLoose rdr path tmap smap = do
+  tmap' <- TM.loadTexture rdr path (TextureId "perdu") tmap
+  let sprite = S.defaultScale $ S.addImage S.createEmptySprite $ S.createImage (TextureId "perdu") (S.mkArea 0 0 250 250)
+  let smap' = SM.addSprite (SpriteId "perdu") sprite smap
+  return (tmap', smap')
+
+loadChest :: Renderer-> FilePath -> TextureMap -> SpriteMap -> IO (TextureMap, SpriteMap)
+loadChest rdr path tmap smap = do
+  tmap' <- TM.loadTexture rdr path (TextureId "chest") tmap
+  let sprite = S.defaultScale $ S.addImage S.createEmptySprite $ S.createImage (TextureId "chest") (S.mkArea 0 0 50 50)
+  let smap' = SM.addSprite (SpriteId "chest") sprite smap
+  return (tmap', smap')
+
   
 
 
@@ -138,6 +162,9 @@ main = do
   (tmap', smap') <- loadPorNSOuv renderer "assets/porte_ouverte_ns.png" tmap' smap'
   (tmap', smap') <- loadEntrance renderer "assets/entrance.png" tmap' smap'
   (tmap', smap') <- loadExit renderer "assets/exit.png" tmap' smap'
+  (tmap', smap') <- loadWin renderer "assets/win.png" tmap' smap'
+  (tmap', smap') <- loadLoose renderer "assets/loose.png" tmap' smap'
+  (tmap', smap') <- loadChest renderer "assets/chest.png" tmap' smap'
     -- chargement du personnage
   (tmap', smap') <- loadPerso renderer "assets/perso.png" tmap' smap'
   -- chargement du virus
@@ -149,7 +176,9 @@ main = do
   --let gameState = M.initGameState x y 
   strcarte <- (readFile $ "maps/map1.txt")
   strmobs <- (readFile $ "maps/mob1.txt")
-  let modele = M.initModele (read strcarte) (E.createEnvi (read strcarte) strmobs)
+
+
+  let engineState = Tour 0 (M.initModele (read strcarte) (E.createEnvi (read strcarte) strmobs)) ""
 -- y = R.randomRIO(0, 380)
   -- initialisation de l'état du clavier
   let kbd = K.createKeyboard
@@ -157,15 +186,15 @@ main = do
 
 
   --putStrLn (show (listFromCarte (M.carte modele)))    --debug : affiche la map de la carte
-  putStrLn (show (M.carte modele))
-  putStrLn ("Invariants du Modele : Carte + Environnement : " ++ (show (M.prop_Modele_inv modele)) ++ "\n")
+  putStrLn (show (M.carte (Engine.modele engineState)))
+  putStrLn ("Invariants du Modele : Carte + Environnement : " ++ (show (M.prop_Modele_inv (Engine.modele engineState))) ++ "\n")
   --Juste pour voir si avant de commencer, le modele est sain
 
 
  
   --putStrLn ("doorsSurroundedByWalls_inv : " ++ (show ((read texte))))
 
-  gameLoop 60 renderer tmap' smap' kbd modele
+  gameLoop 60 renderer tmap' smap' kbd engineState (read strcarte) (E.createEnvi (read strcarte) strmobs)
 
 {-
 data RendererInfos = RendererInfos  { renderer :: Renderer
@@ -194,60 +223,50 @@ displayCarte renderer carte = foldr displayCarteAux renderer (Map.assocs (carte_
 -}
 
 
-gameLoop :: (RealFrac a, Show a) => a -> Renderer -> TextureMap -> SpriteMap -> Keyboard -> Modele -> IO ()
-gameLoop frameRate renderer tmap smap kbd modele = do
+gameLoop :: (RealFrac a, Show a) => a -> Renderer -> TextureMap -> SpriteMap -> Keyboard -> Etat -> Carte -> Envi -> IO ()
+gameLoop frameRate renderer tmap smap kbd state carte env = do
   startTime <- time
   events <- pollEvents
   let kbd' = K.handleEvents events kbd
   clear renderer
-
-  
-
-
-  -- displayCarte (initRendererInfos renderer tmap smap) (carte modele)
-
-  {-
-  mapM_ (\(co, ca) -> (case ca of
-          C.Normal  -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "sol") smap) (fromIntegral (50 * (cx co))) (fromIntegral (50 * (cy co))))
-          _         -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "mur") smap) (fromIntegral (50 * (cx co))) (fromIntegral (50 * (cy co))))
-          ))
-    (Map.assocs (carte_contenu (M.carte modele))) -- est ce que c'est vraiment M.Carte ?
-  -}
-  
-  mapM_ ( \ (co, ca) -> (do
-    let x = (fromIntegral (50 * (cx co))) 
-    let y = (fromIntegral (50 * (cy co)))
-    case ca of
-          C.Normal              -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "sol") smap) x y)
-          C.Mur                 -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "mur") smap) x y)
-          C.Porte NS Ouverte  -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "porte_ouverte_ns") smap) x y)
-          C.Porte NS Fermee   -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "porte_fermee_ns") smap) x y)
-          C.Porte EO Ouverte  -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "porte_ouverte_eo") smap) x y)
-          C.Porte EO Fermee   -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "porte_fermee_eo") smap) x y)
-          C.Entree              -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "entrance") smap) x y)
-          C.Sortie              -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "exit") smap) x y)
-          _                     -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "mur") smap) x y)
-    ))
-    (C.listFromCarte (M.carte modele)) 
+  case state of
+    Engine.Gagne -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "gagne") smap) 150 150)
+    Engine.Perdu -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "perdu") smap) 150 150)
+    _ -> (do
+          
+          mapM_ ( \ (co, ca) -> (do
+            let x = (fromIntegral (50 * (cx co))) 
+            let y = (fromIntegral (50 * (cy co)))
+            case ca of
+                  C.Normal              -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "sol") smap) x y)
+                  C.Mur                 -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "mur") smap) x y)
+                  C.Porte NS Ouverte  -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "porte_ouverte_ns") smap) x y)
+                  C.Porte NS Fermee   -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "porte_fermee_ns") smap) x y)
+                  C.Porte EO Ouverte  -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "porte_ouverte_eo") smap) x y)
+                  C.Porte EO Fermee   -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "porte_fermee_eo") smap) x y)
+                  C.Entree              -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "entrance") smap) x y)
+                  C.Sortie              -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "exit") smap) x y)
+                  _                     -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "mur") smap) x y)
+            ))
+            (C.listFromCarte (M.carte (Engine.modele state))) 
 
 
+          mapM_ ( \ (co, entites) -> (do
+            let x = (fromIntegral (50 * (cx co))) 
+            let y = (fromIntegral (50 * (cy co)))
 
-  mapM_ ( \ (co, entites) -> (do
-    let x = (fromIntegral (50 * (cx co))) 
-    let y = (fromIntegral (50 * (cy co)))
+            mapM_ ( \ entity -> (do
+              case entity of
+                E.Joueur _ _ _ _ -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "perso") smap) x y)
+                E.Monstre _ _ _ _ -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "virus") smap) x y)
+                E.Coffre _ _ -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "chest") smap) x y)
+                --_ -> S.displaySprite renderer tmap S.createEmptySprite
+                )) entites
 
-    mapM_ ( \ entity -> (do
-      case entity of
-        E.Joueur _ _ _ _ -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "perso") smap) x y)
-        E.Monstre _ _ _ _ -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "virus") smap) x y)
-        --_ -> S.displaySprite renderer tmap S.createEmptySprite
-        )) entites
+            )) (E.listFromEnv (M.envi (Engine.modele state)))
+          )
 
-    )) (E.listFromEnv (M.envi modele)) 
-
-  
-  
-
+          
   present renderer
   endTime <- time
   let refreshTime = endTime - startTime
@@ -259,7 +278,13 @@ gameLoop frameRate renderer tmap smap kbd modele = do
   --putStrLn $ "Frame rate: " <> (show (1 / deltaTime)) <> " (frame/s)"
   --putStrLn $ "Refresh time: " <> (show (1 / refreshTime)) <> " (ms)"
   --- update du game state
-  let modele' = M.gameStep (M.checkDead modele) kbd' deltaTime
-  unless (K.keypressed KeycodeEscape kbd') (gameLoop frameRate renderer tmap smap kbd' modele')
+    
+  let newState = case state of
+        Engine.Gagne ->  (if (K.keypressed KeycodeR kbd') then Tour 0 (M.initModele carte env) "" else state)
+        Engine.Perdu -> (if (K.keypressed KeycodeR kbd') then Tour 0 (M.initModele carte env) "" else state)
+        _ -> Engine.etat_tour state kbd' deltaTime
+    
+
+  unless (K.keypressed KeycodeEscape kbd') (gameLoop frameRate renderer tmap smap kbd' newState carte env)
 
 
