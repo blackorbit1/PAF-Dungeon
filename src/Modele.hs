@@ -60,8 +60,6 @@ prop_bouge_post :: Modele -> Entite -> Coord -> Bool
 prop_bouge_post modele entity coord = (E.prop_bougeById_post (E.idn entity) coord (envi modele) (carte modele))
 
 
-
-
 prop_Modele_inv :: Modele -> Bool
 prop_Modele_inv modele = C.prop_Carte_inv (carte modele)
                       && E.prop_Envi_inv (envi modele)
@@ -117,13 +115,15 @@ mml a b = case (a,b) of
 
 attackAux :: (Int, Modele) -> Entite -> (Int, Modele)
 attackAux (damage, modele) entity@(E.Monstre idnn pviee _ _) = case (entityCoord entity modele) of 
-  Just coord -> (damage, modele { envi = (E.setEntity (entity { E.pvie = pviee - damage }) coord (E.rmEntById idnn (envi modele))) } )
+  Just coord -> (damage, modele { envi = (E.setEntity (E.removePvie entity damage) coord (E.rmEntById idnn (envi modele))) } )
   Nothing -> (damage, modele)                      -- dans le cas où l'entitee ne correspond à aucunes coordonnées dans l'environnement
 attackAux (damage, modele) _ = (damage, modele) -- dans le cas où c'est une entitee qui ne peut pas prendre de dommages
 
 
+
+
 attack :: Modele -> Entite -> Coord -> Modele
-attack modele entity c = (\(_, m) -> m) (foldl attackAux (2, modele) (case ( -- ici, l'attaque fait 2 de degats
+attack modele entity c = (\(_, m) -> m) (foldl attackAux (50, modele) (case ( -- ici, l'attaque fait 2 de degats
   (E.getEntitiesAtCoord (C.Coord (C.cx c) ((C.cy c) + 1)) (envi modele) )
   `mml` (E.getEntitiesAtCoord (C.Coord (C.cx c) ((C.cy c) - 1)) (envi modele) )
   `mml` (E.getEntitiesAtCoord (C.Coord ((C.cx c) + 1) (C.cy c)) (envi modele) )
@@ -150,7 +150,9 @@ handlePlayerActions modele player kbd c
     | (K.keypressed KeycodeS kbd) = bouge modele player (C.Coord (C.cx c) ((C.cy c) + 1))
     | (K.keypressed KeycodeD kbd) = bouge modele player (C.Coord ((C.cx c) + 1) (C.cy c))
     | (K.keypressed KeycodeQ kbd) = bouge modele player (C.Coord ((C.cx c) - 1) (C.cy c))
-    -- | (K.keypressed KeycodeQ kbd) = attack modele player c
+    | (K.keypressed KeycodeSpace kbd) = attack modele player c
+    -- | (k.keypressed KeycodeF kbd) = 
+
     --actions à ajouter ici
     | otherwise = modele
 
@@ -161,6 +163,8 @@ gameStepAux modele kbd (entity:entities) = case E.trouveId (E.idn entity) (envi 
   Just (c, E.Monstre _ _ _ _) -> gameStepAux (decider (prevoir entity) modele entity) kbd entities
   _ -> gameStepAux modele kbd entities
 gameStepAux modele kbd [] = modele
+
+-- TODO !!!!!!!!!!!!!!!!! Faire un cleanup de toutes les entités qui ont 0 pts de vie
 
 gameStep :: RealFrac a => Modele -> Keyboard -> a -> Modele
 gameStep modele kbd deltaTime = gameStepAux modele kbd (E.listEntities (envi modele))

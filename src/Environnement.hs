@@ -165,6 +165,20 @@ prop_setEntity_post entity coord env = ((trouveId (idn entity) env) == (Just (co
 
 
 
+removePvie :: Entite -> Int -> Entite           --ne sera jamais sur sur autre chose qu'un joueur ou un monstre
+removePvie ent deg = ent { E.pvie = (max ((pvie ent) - deg) 0 ) }
+
+prop_removePvie_pre :: Entite -> Int -> Bool
+prop_removePvie_pre ent deg = (deg >= 0) && (case ent of
+        Joueur _ _ _ _ -> True
+        Monstre _ _ _ _ -> True
+        _ -> False)
+
+prop_removePvie_post :: Entite -> Int -> Bool
+prop_removePvie_post ent deg = prop_Entite_inv ent
+
+
+
 rmEntById :: Int -> Envi -> Envi
 rmEntById idn env = case trouveId idn env of
         Just (coord, en) ->  Envi(M.insert coord (delete en (case (getEntitiesAtCoord coord env) of
@@ -178,6 +192,8 @@ prop_rmEntById_pre idn env = (idn > 0) && ((trouveId idn env) /= Nothing )
 
 prop_rmEntById_post :: Int -> Envi -> Bool 
 prop_rmEntById_post idn env = (idn > 0) && ((trouveId idn env) == Nothing )
+
+
 
 
 bougeById :: Int -> Coord -> Envi -> Carte -> Envi
