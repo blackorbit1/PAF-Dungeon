@@ -66,25 +66,26 @@ prop_Modele_inv modele = C.prop_Carte_inv (carte modele)
 
 
 
-prevoir :: Entite -> [(Int,Ordre)]
-prevoir entity = case entity of
-  E.Monstre _ _ _ _ -> [(1, Haut ),(1, Bas ),(1, Droite ),(1, Gauche ), (2, Rien )] --(0, Uti ), (4, Atk ),
+prevoir :: Entite -> Envi -> [(Int,Ordre)]
+prevoir entity env = case entity of
+  E.Monstre _ _ _ _ _ -> if (
+      case (E.getPlayerCoord env, E.entityCoord entity env) of
+        (Just coP, Just coM) -> ((abs ((C.cx coP) - (C.cx coM))) <= 2) && ((abs ((C.cy coP) - (C.cy coM))) <= 1)
+        (_, _) -> False )
+    then [(1, Haut ),(1, Bas ),(1, Droite ),(1, Gauche ), (2, Rien ), (0, Uti ), (40, Atk )]
+    else [(1, Haut ),(1, Bas ),(1, Droite ),(1, Gauche ), (2, Rien ), (0, Uti ), (0, Atk )]
   otherwise -> [(1, Haut ),(1, Bas ),(1, Droite ),(1, Gauche ),(1, Uti ), (0, Atk ), (1, Rien )]
+
 
 transformPonderatedList :: [(Int, Ordre)] -> [Ordre]
 transformPonderatedList ((0,ordre):xs) = transformPonderatedList xs
 transformPonderatedList ((coef,ordre):xs) = ordre:(transformPonderatedList ((coef-1,ordre):xs))
 transformPonderatedList [] = []
 
-entityCoord :: Entite -> Modele -> Maybe Coord
-entityCoord e m = (\result -> case result of 
-    Just (co, _) -> Just co
-    Nothing -> Nothing ) 
-  (E.trouveId (E.idn e) (envi  m))
 
 decider :: [(Int, Ordre)] -> Modele -> Entite -> Modele
 decider list m entity = 
-  case (entityCoord entity m) of
+  case (E.entityCoord entity (envi m)) of
     Just c -> (
       let (ordre, modele) = pickOrder (transformPonderatedList list) m in
       case ordre of
@@ -113,17 +114,20 @@ mml a b = case (a,b) of
   (Just a, Nothing) -> Just a 
   (Just a, Just b) -> Just (a <> b)
 
-attackAux :: (Int, Modele) -> Entite -> (Int, Modele)
-attackAux (damage, modele) entity@(E.Monstre idnn pviee _ _) = case (entityCoord entity modele) of 
-  Just coord -> (damage, modele { envi = (E.setEntity (E.removePvie entity damage) coord (E.rmEntById idnn (envi modele))) } )
+applyDamage :: Int -> Modele -> Entite -> Int -> Int -> (Int, Modele)
+applyDamage damage modele entity idnn pviee = case (E.entityCoord entity (envi modele)) of 
+  Just coord ->  (damage, modele{ envi = (E.setEntity (E.removePvie entity damage) coord (E.rmEntById idnn (envi modele))) } )
   Nothing -> (damage, modele)                      -- dans le cas où l'entitee ne correspond à aucunes coordonnées dans l'environnement
+
+attackAux :: (Int, Modele) -> Entite -> (Int, Modele)
+attackAux (damage, modele) entity@(E.Monstre idnn pviee _ _ _) = applyDamage damage modele entity idnn pviee
+attackAux (damage, modele) entity@(E.Joueur idnn pviee _ _ _ _) = applyDamage damage modele entity idnn pviee
 attackAux (damage, modele) _ = (damage, modele) -- dans le cas où c'est une entitee qui ne peut pas prendre de dommages
 
 
-
-
 attack :: Modele -> Entite -> Coord -> Modele
-attack modele entity c = (\(_, m) -> m) (foldl attackAux (50, modele) (case ( -- ici, l'attaque fait 2 de degats
+--attack modele entity c = (\(_, m@(Modele carte env gene logs keyboard) ) -> Modele carte (E.changeAttackingState entity env c True) gene logs keyboard) (foldl attackAux (50, modele) (case ( -- ici, l'attaque fait 2 de degats
+attack modele entity c = (\(_, m@(Modele _ env _ _ _) ) -> m { envi = (E.changeAttackingState entity env c True) } ) (foldl attackAux (50, modele) (case ( -- ici, l'attaque fait 2 de degats
   (E.getEntitiesAtCoord (C.Coord (C.cx c) ((C.cy c) + 1)) (envi modele) )
   `mml` (E.getEntitiesAtCoord (C.Coord (C.cx c) ((C.cy c) - 1)) (envi modele) )
   `mml` (E.getEntitiesAtCoord (C.Coord ((C.cx c) + 1) (C.cy c)) (envi modele) )
@@ -159,12 +163,11 @@ handlePlayerActions modele player kbd c
 
 gameStepAux :: Modele -> Keyboard -> [Entite] -> Modele
 gameStepAux modele kbd (entity:entities) = case E.trouveId (E.idn entity) (envi modele) of
-  Just (c, E.Joueur _ _ _ _) ->  gameStepAux (handlePlayerActions modele entity kbd c) kbd entities
-  Just (c, E.Monstre _ _ _ _) -> gameStepAux (decider (prevoir entity) modele entity) kbd entities
+  Just (c, E.Joueur _ _ _ _ _ _) -> gameStepAux (handlePlayerActions modele entity kbd c) kbd entities
+  Just (c, E.Monstre _ _ _ _ _) -> gameStepAux (decider (prevoir entity (envi modele)) modele entity) kbd entities
   _ -> gameStepAux modele kbd entities
 gameStepAux modele kbd [] = modele
 
--- TODO !!!!!!!!!!!!!!!!! Faire un cleanup de toutes les entités qui ont 0 pts de vie
 
 gameStep :: RealFrac a => Modele -> Keyboard -> a -> Modele
 gameStep modele kbd deltaTime = gameStepAux modele kbd (E.listEntities (envi modele))
