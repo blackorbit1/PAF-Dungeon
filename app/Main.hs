@@ -115,61 +115,34 @@ loadPerso rdr path tmap smap = do
   let smap' = SM.addSprite (SpriteId "perso") sprite smap
   return (tmap', smap')
 
-loadPersoAttacking :: Renderer-> FilePath -> TextureMap -> SpriteMap -> IO (TextureMap, SpriteMap)
-loadPersoAttacking rdr path tmap smap = do
-  tmap' <- TM.loadTexture rdr path (TextureId "persoAttacking") tmap
-  let sprite = S.defaultScale $ S.addImage S.createEmptySprite $ S.createImage (TextureId "persoAttacking") (S.mkArea 0 0 50 50)
-  let smap' = SM.addSprite (SpriteId "persoAttacking") sprite smap
-  return (tmap', smap')
-
-loadMonstre :: Renderer-> FilePath -> TextureMap -> SpriteMap -> IO (TextureMap, SpriteMap)
-loadMonstre rdr path tmap smap = do
-  tmap' <- TM.loadTexture rdr path (TextureId "monstre") tmap
-  let sprite = S.defaultScale $ S.addImage S.createEmptySprite $ S.createImage (TextureId "monstre") (S.mkArea 0 0 50 50)
-  let smap' = SM.addSprite (SpriteId "monstre") sprite smap
-  return (tmap', smap')
-
-loadMonstreAttacking :: Renderer-> FilePath -> TextureMap -> SpriteMap -> IO (TextureMap, SpriteMap)
-loadMonstreAttacking rdr path tmap smap = do
-  tmap' <- TM.loadTexture rdr path (TextureId "monstreAttacking") tmap
-  let sprite = S.defaultScale $ S.addImage S.createEmptySprite $ S.createImage (TextureId "monstreAttacking") (S.mkArea 0 0 50 50)
-  let smap' = SM.addSprite (SpriteId "monstreAttacking") sprite smap
+loadVirus :: Renderer-> FilePath -> TextureMap -> SpriteMap -> IO (TextureMap, SpriteMap)
+loadVirus rdr path tmap smap = do
+  tmap' <- TM.loadTexture rdr path (TextureId "virus") tmap
+  let sprite = S.defaultScale $ S.addImage S.createEmptySprite $ S.createImage (TextureId "virus") (S.mkArea 0 0 50 50)
+  let smap' = SM.addSprite (SpriteId "virus") sprite smap
   return (tmap', smap')
 
 loadWin :: Renderer-> FilePath -> TextureMap -> SpriteMap -> IO (TextureMap, SpriteMap)
 loadWin rdr path tmap smap = do
   tmap' <- TM.loadTexture rdr path (TextureId "gagne") tmap
-  let sprite = S.defaultScale $ S.addImage S.createEmptySprite $ S.createImage (TextureId "gagne") (S.mkArea 0 0 500 500)
+  let sprite = S.defaultScale $ S.addImage S.createEmptySprite $ S.createImage (TextureId "gagne") (S.mkArea 0 0 250 250)
   let smap' = SM.addSprite (SpriteId "gagne") sprite smap
   return (tmap', smap')
 
 loadLoose :: Renderer-> FilePath -> TextureMap -> SpriteMap -> IO (TextureMap, SpriteMap)
 loadLoose rdr path tmap smap = do
   tmap' <- TM.loadTexture rdr path (TextureId "perdu") tmap
-  let sprite = S.defaultScale $ S.addImage S.createEmptySprite $ S.createImage (TextureId "perdu") (S.mkArea 0 0 500 500)
+  let sprite = S.defaultScale $ S.addImage S.createEmptySprite $ S.createImage (TextureId "perdu") (S.mkArea 0 0 250 250)
   let smap' = SM.addSprite (SpriteId "perdu") sprite smap
   return (tmap', smap')
 
-loadChestOpened :: Renderer-> FilePath -> TextureMap -> SpriteMap -> IO (TextureMap, SpriteMap)
-loadChestOpened rdr path tmap smap = do
-  tmap' <- TM.loadTexture rdr path (TextureId "chestOpened") tmap
-  let sprite = S.defaultScale $ S.addImage S.createEmptySprite $ S.createImage (TextureId "chestOpened") (S.mkArea 0 0 50 50)
-  let smap' = SM.addSprite (SpriteId "chestOpened") sprite smap
+loadChest :: Renderer-> FilePath -> TextureMap -> SpriteMap -> IO (TextureMap, SpriteMap)
+loadChest rdr path tmap smap = do
+  tmap' <- TM.loadTexture rdr path (TextureId "chest") tmap
+  let sprite = S.defaultScale $ S.addImage S.createEmptySprite $ S.createImage (TextureId "chest") (S.mkArea 0 0 50 50)
+  let smap' = SM.addSprite (SpriteId "chest") sprite smap
   return (tmap', smap')
 
-loadChestClosed :: Renderer-> FilePath -> TextureMap -> SpriteMap -> IO (TextureMap, SpriteMap)
-loadChestClosed rdr path tmap smap = do
-  tmap' <- TM.loadTexture rdr path (TextureId "chestClosed") tmap
-  let sprite = S.defaultScale $ S.addImage S.createEmptySprite $ S.createImage (TextureId "chestClosed") (S.mkArea 0 0 50 50)
-  let smap' = SM.addSprite (SpriteId "chestClosed") sprite smap
-  return (tmap', smap')
-
-loadShadow :: Renderer-> FilePath -> TextureMap -> SpriteMap -> IO (TextureMap, SpriteMap)
-loadShadow rdr path tmap smap = do
-  tmap' <- TM.loadTexture rdr path (TextureId "shadow") tmap
-  let sprite = S.defaultScale $ S.addImage S.createEmptySprite $ S.createImage (TextureId "shadow") (S.mkArea 0 0 1000 1000)
-  let smap' = SM.addSprite (SpriteId "shadow") sprite smap
-  return (tmap', smap')
   
 
 
@@ -191,16 +164,11 @@ main = do
   (tmap', smap') <- loadExit renderer "assets/exit.png" tmap' smap'
   (tmap', smap') <- loadWin renderer "assets/win.png" tmap' smap'
   (tmap', smap') <- loadLoose renderer "assets/loose.png" tmap' smap'
-  (tmap', smap') <- loadChestOpened renderer "assets/chest_opened.png" tmap' smap'
-  (tmap', smap') <- loadChestClosed renderer "assets/chest_closed.png" tmap' smap'
+  (tmap', smap') <- loadChest renderer "assets/chest.png" tmap' smap'
     -- chargement du personnage
   (tmap', smap') <- loadPerso renderer "assets/perso.png" tmap' smap'
-  (tmap', smap') <- loadPersoAttacking renderer "assets/persoAttacking.png" tmap' smap'
   -- chargement du virus
-  (tmap', smap') <- loadMonstre renderer "assets/monstre.png" tmap' smap'
-  (tmap', smap') <- loadMonstreAttacking renderer "assets/monstreAttacking.png" tmap' smap'
-
-  (tmap', smap') <- loadShadow renderer "assets/brouillard.png" tmap' smap'
+  (tmap', smap') <- loadVirus renderer "assets/virus.png" tmap' smap'
   
   -- initialisation de l'état du jeu
   --x <- R.randomRIO(0, 540)
@@ -262,10 +230,10 @@ gameLoop frameRate renderer tmap smap kbd state carte env = do
   let kbd' = K.handleEvents events kbd
   clear renderer
   case state of
-    Engine.Gagne -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "gagne") smap) 0 0)
-    Engine.Perdu -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "perdu") smap) 0 0)
+    Engine.Gagne -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "gagne") smap) 150 150)
+    Engine.Perdu -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "perdu") smap) 150 150)
     _ -> (do
-          (putStrLn (show (Engine.num_tour state)))
+          
           mapM_ ( \ (co, ca) -> (do
             let x = (fromIntegral (50 * (cx co))) 
             let y = (fromIntegral (50 * (cy co)))
@@ -289,32 +257,15 @@ gameLoop frameRate renderer tmap smap kbd state carte env = do
 
             mapM_ ( \ entity -> (do
               case entity of
-                E.Joueur _ _ _ _ False _ ->S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "perso") smap) x y)
-                E.Joueur _ _ _ _ True _ -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "persoAttacking") smap) x y)
-                E.Monstre _ _ _ _ False -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "monstre") smap) x y)
-                E.Monstre _ _ _ _ True -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "monstreAttacking") smap) x y)
-                E.Coffre _ _ True -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "chestOpened") smap) x y)
-                E.Coffre _ _ False -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "chestClosed") smap) x y)
+                E.Joueur _ _ _ _ -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "perso") smap) x y)
+                E.Monstre _ _ _ _ -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "virus") smap) x y)
+                E.Coffre _ _ -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "chest") smap) x y)
                 --_ -> S.displaySprite renderer tmap S.createEmptySprite
                 )) entites
 
             )) (E.listFromEnv (M.envi (Engine.modele state)))
-          
-            
-          case E.getPlayerCoord (M.envi (Engine.modele state)) of
-            --(Just c) -> ( ((fromIntegral ((cx c)) - 475)) , (fromIntegral ((cy c) - 475)) )
-            --_ -> return ()
-
-
-            (Just c) -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "shadow") smap) (fromIntegral ((50 * (cx c)) - 475)) (fromIntegral ((50 * (cy c)) - 475)) )
-            _ -> return ()
-          
-          --putStrLn position_perso
-
-
           )
-          
-   
+
           
   present renderer
   endTime <- time
@@ -332,10 +283,8 @@ gameLoop frameRate renderer tmap smap kbd state carte env = do
         Engine.Gagne ->  (if (K.keypressed KeycodeR kbd') then Tour 0 (M.initModele carte env) "" else state)
         Engine.Perdu -> (if (K.keypressed KeycodeR kbd') then Tour 0 (M.initModele carte env) "" else state)
         _ -> Engine.etat_tour state kbd' deltaTime
-
-  
     
-  
+
   unless (K.keypressed KeycodeEscape kbd') (gameLoop frameRate renderer tmap smap kbd' newState carte env)
 
 
