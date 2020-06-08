@@ -115,6 +115,13 @@ loadPerso rdr path tmap smap = do
   let smap' = SM.addSprite (SpriteId "perso") sprite smap
   return (tmap', smap')
 
+loadPersoKey :: Renderer-> FilePath -> TextureMap -> SpriteMap -> IO (TextureMap, SpriteMap)
+loadPersoKey rdr path tmap smap = do
+  tmap' <- TM.loadTexture rdr path (TextureId "persoKey") tmap
+  let sprite = S.defaultScale $ S.addImage S.createEmptySprite $ S.createImage (TextureId "persoKey") (S.mkArea 0 0 50 50)
+  let smap' = SM.addSprite (SpriteId "persoKey") sprite smap
+  return (tmap', smap')
+
 loadPersoAttacking :: Renderer-> FilePath -> TextureMap -> SpriteMap -> IO (TextureMap, SpriteMap)
 loadPersoAttacking rdr path tmap smap = do
   tmap' <- TM.loadTexture rdr path (TextureId "persoAttacking") tmap
@@ -195,6 +202,7 @@ main = do
   (tmap', smap') <- loadChestClosed renderer "assets/chest_closed.png" tmap' smap'
     -- chargement du personnage
   (tmap', smap') <- loadPerso renderer "assets/perso.png" tmap' smap'
+  (tmap', smap') <- loadPersoKey renderer "assets/perso_key.png" tmap' smap'
   (tmap', smap') <- loadPersoAttacking renderer "assets/persoAttacking.png" tmap' smap'
   -- chargement du virus
   (tmap', smap') <- loadMonstre renderer "assets/monstre.png" tmap' smap'
@@ -265,7 +273,7 @@ gameLoop frameRate renderer tmap smap kbd state carte env = do
     Engine.Gagne -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "gagne") smap) 0 0)
     Engine.Perdu -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "perdu") smap) 0 0)
     _ -> (do
-          (putStrLn (show (Engine.num_tour state)))
+          putStrLn (show (E.listEntities (M.envi (Engine.modele state))))
           mapM_ ( \ (co, ca) -> (do
             let x = (fromIntegral (50 * (cx co))) 
             let y = (fromIntegral (50 * (cy co)))
@@ -289,8 +297,10 @@ gameLoop frameRate renderer tmap smap kbd state carte env = do
 
             mapM_ ( \ entity -> (do
               case entity of
-                E.Joueur _ _ _ _ False _ ->S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "perso") smap) x y)
+                E.Joueur _ _ _ _ False False ->S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "perso") smap) x y)
+                E.Joueur _ _ _ _ False True ->S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "persoKey") smap) x y)
                 E.Joueur _ _ _ _ True _ -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "persoAttacking") smap) x y)
+                E.Joueur _ _ _ _ False True ->S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "perso") smap) x y)
                 E.Monstre _ _ _ _ False -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "monstre") smap) x y)
                 E.Monstre _ _ _ _ True -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "monstreAttacking") smap) x y)
                 E.Coffre _ _ True -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "chestOpened") smap) x y)

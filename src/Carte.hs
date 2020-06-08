@@ -191,6 +191,7 @@ openDoor :: Coord -> Carte -> Carte
 openDoor coord carte = case getCase coord carte of 
     Just (Porte NS _) -> editCase coord (Porte NS Ouverte) carte
     Just (Porte EO _) -> editCase coord (Porte EO Ouverte) carte
+    _ -> carte
 
 prop_openDoor_pre :: Coord -> Carte -> Bool
 prop_openDoor_pre coord carte = case (getCase coord carte) of
