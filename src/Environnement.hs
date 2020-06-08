@@ -14,9 +14,9 @@ import Data.List
 
 data Envi = Envi { contenu_envi :: M.Map Coord [Entite] }
 
-data Entite = Monstre {idn :: Int , pvie :: Int, clearanceLevel :: Int, isFranchissable :: Bool, attacking :: Bool}
-            | Joueur {idn :: Int , pvie :: Int, clearanceLevel :: Int, isFranchissable :: Bool, attacking :: Bool, hasKey :: Bool}
-            | Coffre {idn :: Int, isFranchissable :: Bool, open :: Bool}
+data Entite = Monstre {idn :: Int , pvie :: Int, clearanceLevel :: Int, isFranchissable :: Bool}
+            | Joueur {idn :: Int , pvie :: Int, clearanceLevel :: Int, isFranchissable :: Bool}
+            | Coffre {idn :: Int, isFranchissable :: Bool}
     deriving (Eq, Show)
 
 
@@ -64,31 +64,23 @@ prop_createEnvi_post env = prop_Envi_inv env  -- meme question que pour la post 
 -- Cree une Entite a partir d'un caractère
 entiteFromChar :: Char -> Int -> Entite
 entiteFromChar caractere idn = case caractere of
-    'J' -> Joueur idn 400 10 False False False
-    'M' -> Monstre idn 100 20 False False
-    'C' -> Coffre idn True False
-    'E' -> Coffre idn True False
+    'J' -> Joueur idn 300 10 False
+    'M' -> Monstre idn 100 20 False
+    'C' -> Coffre idn True
 
 -- Renvoie le caractère correspondant à l'Entite
 strFromEntite :: Entite -> String
 strFromEntite ca = case ca of
-    Joueur _ _ _ _ _ _-> "J"
-    Monstre _ _ _ _ _ -> "M"
-    Coffre _ _ False -> "C"
-    Coffre _ _ True -> "E"
+    Joueur _ _ _ _ -> "J"
+    Monstre _ _ _ _ -> "M"
+    Coffre _ _ -> "C"
 
 listFromEnv :: Envi -> [(Coord, [Entite])]
 listFromEnv env = (sortBy (comparing fst) (M.assocs (contenu_envi env) ))
 
-
-entityCoord :: Entite -> Envi -> Maybe Coord
-entityCoord ent env = case trouveId (idn ent) env of
-        Just (co,_) -> Just co
-        Nothing -> Nothing
-
 isPlayer :: Entite -> Bool
 isPlayer entity = case entity of
-        Joueur _ _ _ _ _ _-> True
+        Joueur _ _ _ _ -> True
         _ -> False
 
 getPlayerEntity :: Envi -> Maybe Entite
@@ -174,12 +166,12 @@ prop_setEntity_post entity coord env = ((trouveId (idn entity) env) == (Just (co
 
 
 removePvie :: Entite -> Int -> Entite           --ne sera jamais sur sur autre chose qu'un joueur ou un monstre
-removePvie ent deg = ent { pvie = (max ((pvie ent) - deg) 0 ) }
+removePvie ent deg = ent { E.pvie = (max ((pvie ent) - deg) 0 ) }
 
 prop_removePvie_pre :: Entite -> Int -> Bool
 prop_removePvie_pre ent deg = (deg >= 0) && (case ent of
-        Joueur _ _ _ _ _ _ -> True
-        Monstre _ _ _ _ _ -> True
+        Joueur _ _ _ _ -> True
+        Monstre _ _ _ _ -> True
         _ -> False)
 
 prop_removePvie_post :: Entite -> Int -> Bool
@@ -223,49 +215,7 @@ prop_bougeById_post idn coord env carte =  (prop_uniqueIds_inv env) -- pour etre
                                                 ((Just entities), (Just (co, entity))) -> (entity `elem` entities) && (coord == co)
                                                 otherwise -> False )
 
-
-
-changeAttackingState :: Entite -> Envi -> Coord -> Bool -> Envi
-changeAttackingState entity env coord b = let env2 = rmEntById (idn entity) env in
-                                      (setEntity (entity {attacking = b }) coord env2)
-
-getAsNotAttacking :: Entite -> Entite
-getAsNotAttacking entity@(Coffre _ _ _) = entity 
-getAsNotAttacking entity = entity {attacking = False }
-
-setAllAsNotAttackingAux :: (Coord, [Entite]) -> (Coord, [Entite])
-setAllAsNotAttackingAux (co, []) = (co, [])
-setAllAsNotAttackingAux (co, entities) = (co, (map getAsNotAttacking entities))
-
-setAllAsNotAttacking :: Envi -> Envi
-setAllAsNotAttacking env = Envi (M.fromList (map setAllAsNotAttackingAux (listFromEnv env)))
-
-cleanAux :: Entite -> Bool
-cleanAux entity = case entity of
-        Monstre _ _ _ _ _-> ((pvie entity) > 0)
-        _ -> True
-
-{-
-
-
-changeAttackingState :: Entite -> Envi -> Coord -> Bool -> Envi
-changeAttackingState entity env coord b = let env = rmEntById (idn entity) env in
-                                      (setEntity (entity {attacking = b }) coord env)
-
-setAsNotAttacking :: Envi -> Entite -> Envi
-setAsNotAttacking env entity = case ((entityCoord entity env), (getEntitiesAtCoord)) of
-        (Just c, Just entities) -> changeAttackingState entity env c False
-        _ -> env
-
-setAllAsNotAttacking :: Envi -> Envi
-setAllAsNotAttacking env = (M.map (\ entities -> (foldl setAsNotAttacking env entities)) (contenu_envi env))
-
--}
-
-
-cleanUpEntities :: Envi -> Envi
-cleanUpEntities env = setAllAsNotAttacking (Envi (M.map (\ entities -> (filter cleanAux entities)) (contenu_envi env)))
-
+                                                
 ---------------------INVARIANTS----------------------
 
 
@@ -325,7 +275,7 @@ prop_Envi_inv env = (prop_allCoordsPositive_inv env)
 
 prop_Entite_inv :: Entite -> Bool
 prop_Entite_inv entity =   case entity of
-        Coffre _ _ _ -> (idn entity) >= 0
+        Coffre _ _ -> (idn entity) >= 0
         _ ->    ((idn entity) >= 0)                     --Joueur et Monstre
                 && ((pvie entity) >= 0)
                 && ((clearanceLevel entity) >= 0)
