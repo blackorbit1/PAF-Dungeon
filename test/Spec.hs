@@ -1,7 +1,8 @@
 import Test.Hspec
 import CarteSpec as CS
 import EnvSpec as ES
-import ModeleSpec as MS
+import ModeleSpec as MODS
+import MoteurSpec as MOTS
 
 main :: IO ()
 --main = putStrLn "Test suite not yet implemented"
@@ -22,7 +23,9 @@ main = hspec $ do
     ES.environnementUniqueIdsSpec
     ES.environnementEnviSpec
 
-    MS.modeleModeleSpec
+    MODS.modeleModeleSpec
+
+    MOTS.moteurMoteurSpec
 
 
 

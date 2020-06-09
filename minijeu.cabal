@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: dae32a8fa14b8821f841cebaa2c426c5912424ea5647907c061f5bfefaa2ee9c
+-- hash: ab132d139fff075eb0f92b8c926b5c5a335ece9f2290ad22a426d1e5f7f9926e
 
 name:           minijeu
 version:        0.1.0.0
@@ -78,6 +78,7 @@ test-suite minijeu-test
       CarteSpec
       EnvSpec
       ModeleSpec
+      MoteurSpec
       Paths_minijeu
   hs-source-dirs:
       test

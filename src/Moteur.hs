@@ -14,8 +14,9 @@ import qualified Modele as M
 
 import qualified Data.Map.Strict as Map
 
---import StdGen
 
+
+---------------------STRUCTURES----------------------
 
 
 data Etat =   Perdu 
@@ -23,6 +24,26 @@ data Etat =   Perdu
             | Tour {  num_tour :: Int
                 , modele :: Modele.Modele
                 , journal_tour :: String}
+
+
+---------------------INSTANCES----------------------
+
+
+instance Show Etat where
+    show = toString
+
+class ToString a where
+    toString :: a -> String
+
+instance ToString Etat where
+    toString state = case state of
+            Perdu -> "PERDU !!!"
+            Gagne -> "GAGNE !!!"
+            Tour num mod log -> "step n° "  ++ (show num) ++ "\n" ++ (show (modele state)) ++ "\n"
+
+
+
+---------------------OPERATIONS----------------------
 
 
 etat_tour :: RealFrac a => Etat -> Keyboard -> a -> Etat
@@ -36,4 +57,16 @@ etat_tour state kbd deltaT = case state of
             else state {num_tour = (num_tour state) + 1 , modele = m, journal_tour = (M.logs m)}
     _ -> state
 
+
+
+---------------------INVARIANTS----------------------
+
+        
+prop_Etat_inv :: Etat -> Bool
+prop_Etat_inv state = case state of
+        Tour num m j -> (num >= 0) && (M.prop_Modele_inv m) 
+        _ -> True
+        
+        
+        
         

@@ -273,7 +273,7 @@ gameLoop frameRate renderer tmap smap kbd state carte env = do
     Engine.Gagne -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "gagne") smap) 0 0)
     Engine.Perdu -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "perdu") smap) 0 0)
     _ -> (do
-          putStrLn (show (E.listEntities (M.envi (Engine.modele state))))
+          putStrLn (show state)
           mapM_ ( \ (co, ca) -> (do
             let x = (fromIntegral (50 * (cx co))) 
             let y = (fromIntegral (50 * (cy co)))
@@ -300,7 +300,6 @@ gameLoop frameRate renderer tmap smap kbd state carte env = do
                 E.Joueur _ _ _ _ False False ->S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "perso") smap) x y)
                 E.Joueur _ _ _ _ False True ->S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "persoKey") smap) x y)
                 E.Joueur _ _ _ _ True _ -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "persoAttacking") smap) x y)
-                E.Joueur _ _ _ _ False True ->S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "perso") smap) x y)
                 E.Monstre _ _ _ _ False -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "monstre") smap) x y)
                 E.Monstre _ _ _ _ True -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "monstreAttacking") smap) x y)
                 E.Coffre _ _ True -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "chestOpened") smap) x y)

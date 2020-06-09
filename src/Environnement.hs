@@ -44,7 +44,7 @@ insertEntitiesAux (x, y, idn, env) char = (x+1, y, (idn + 1), (setEntity (entite
 insertEntities :: String -> Envi -> Envi
 insertEntities texte env = (\(_, _, _, new_env) -> new_env) (foldl insertEntitiesAux (0, 0, 0, env) texte)
 
-
+--Cree un environnement en se basant sur la forme de la carte et d'une string contenant les caracteres d'entite
 createEnvi :: Carte -> String -> Envi
 createEnvi carte texte = insertEntities texte (foldl 
                         (\ env@(Envi {contenu_envi = ce}) (coord, _ ) -> env {contenu_envi = (M.insert coord [] ce) })
@@ -64,7 +64,7 @@ prop_createEnvi_post env = prop_Envi_inv env  -- meme question que pour la post 
 -- Cree une Entite a partir d'un caractère
 entiteFromChar :: Char -> Int -> Entite
 entiteFromChar caractere idn = case caractere of
-    'J' -> Joueur idn 40000 10 False False False
+    'J' -> Joueur idn 400 10 False False False
     'M' -> Monstre idn 100 20 False False
     'C' -> Coffre idn True False
     'E' -> Coffre idn True False
@@ -77,39 +77,45 @@ strFromEntite ca = case ca of
     Coffre _ _ False -> "C"
     Coffre _ _ True -> "E"
 
+--Transforme un Environnement en une liste de couple key val
 listFromEnv :: Envi -> [(Coord, [Entite])]
 listFromEnv env = (sortBy (comparing fst) (M.assocs (contenu_envi env) ))
 
-
+--Retourne les potentielles coordonnees d'une entitee dans un environnement
 entityCoord :: Entite -> Envi -> Maybe Coord
 entityCoord ent env = case trouveId (idn ent) env of
         Just (co,_) -> Just co
         Nothing -> Nothing
 
+--Retourne True si l'entité est un Joueur
 isPlayer :: Entite -> Bool
 isPlayer entity = case entity of
         Joueur _ _ _ _ _ _-> True
         _ -> False
 
+--Retourne l'entite du joueur s'il y en a un dans l'environnement
 getPlayerEntity :: Envi -> Maybe Entite
 getPlayerEntity env = case getPlayer env of
         Just (_,en) -> Just en
         Nothing -> Nothing
 
+--Retourne le couple (coord, entite) du joueur s'il y en a un dans l'environnement
 getPlayer :: Envi -> Maybe (Coord, Entite)
 getPlayer env = case filter (isPlayer) (listEntities env) of
         [] -> Nothing
         playerList -> (trouveId (idn (head playerList)) env)
 
+--Retourne les coordonnees du joueur s'il y en a un dans l'environnement
 getPlayerCoord :: Envi -> Maybe Coord
 getPlayerCoord env = case getPlayer env of
         Just (co,p) -> Just co
         Nothing -> Nothing
 
+--Retourne une liste contenant toutes les entites de l'environnement
 listEntities :: Envi -> [Entite]
 listEntities env = foldl (\entities (_,entlist) -> entities <> entlist) [] (listFromEnv env)
 
-
+--Retourne vrai si les entites contenues dans une case peuvent etre traversées
 franchissableEnv :: Coord -> Envi -> Bool
 franchissableEnv coord env = case (getEntitiesAtCoord coord env) of
         Just entities -> foldl (\boolAcc entity -> (boolAcc && (isFranchissable entity))) True entities
@@ -124,8 +130,6 @@ prop_franchissableEnv_post coord env = undefined -- etant donne que cette foncti
 
 
 
-
-
 entityFromId :: [Entite] -> Int -> Maybe Entite
 entityFromId (entity:entities) wanted_idn = if (idn entity) == wanted_idn then Just entity else (entityFromId entities wanted_idn)
 entityFromId [] _ = Nothing
@@ -137,6 +141,7 @@ trouveId_aux idn ((coord, entities):xs) = case (entityFromId entities idn) of
         Nothing -> trouveId_aux idn xs
 trouveId_aux _ [] = Nothing
 
+--Retourn le couple coord,entite si l'idn fourni existe dans l'environnement
 trouveId :: Int -> Envi -> Maybe (Coord, Entite)
 trouveId idn env = trouveId_aux idn (listFromEnv env)
 
@@ -153,7 +158,7 @@ getEntitiesAtCoord coord env = M.lookup coord (contenu_envi env)
 
 ---------------------OPERATIONS----------------------
 
-
+--Ajoute une entite aux coordonnees dans l'environnement
 setEntity :: Entite -> Coord -> Envi -> Envi 
 setEntity entite coord env = case getEntitiesAtCoord coord env of
         Just new_entities -> Envi (M.insert coord (entite:(new_entities)) (contenu_envi env))
@@ -172,8 +177,8 @@ prop_setEntity_post entity coord env = ((trouveId (idn entity) env) == (Just (co
                                                 Nothing -> False )
 
 
-
-removePvie :: Entite -> Int -> Entite           --ne sera jamais sur sur autre chose qu'un joueur ou un monstre
+--Enleve un certain nom de pt de vie à une entite
+removePvie :: Entite -> Int -> Entite           --ne sera jamais appele sur sur autre chose qu'un joueur ou un monstre
 removePvie ent deg = ent { pvie = (max ((pvie ent) - deg) 0 ) }
 
 prop_removePvie_pre :: Entite -> Int -> Bool
@@ -186,7 +191,7 @@ prop_removePvie_post :: Entite -> Int -> Bool
 prop_removePvie_post ent deg = prop_Entite_inv ent
 
 
-
+--supprime une entite par son idn
 rmEntById :: Int -> Envi -> Envi
 rmEntById idn env = case trouveId idn env of
         Just (coord, en) ->  Envi(M.insert coord (delete en (case (getEntitiesAtCoord coord env) of
@@ -203,7 +208,7 @@ prop_rmEntById_post idn env = (idn > 0) && ((trouveId idn env) == Nothing )
 
 
 
-
+--Deplace une entite par son idn a de nouvelles coordonnees
 bougeById :: Int -> Coord -> Envi -> Carte -> Envi
 bougeById idn coord env carte = case ((trouveId idn env), (getCase coord carte)) of
         ((Just (_, entite)), (Just ca)) -> if (isTraversable ca (clearanceLevel entite)) && (franchissableEnv coord env) then
@@ -225,10 +230,21 @@ prop_bougeById_post idn coord env carte =  (prop_uniqueIds_inv env) -- pour etre
 
 
 
-changeAttackingState :: Entite -> Envi -> Coord -> Bool -> Envi
-changeAttackingState entity env coord b = let env2 = rmEntById (idn entity) env in
-                                      (setEntity (entity {attacking = b }) coord env2)
+setAttackingTrue :: Entite -> Envi -> Coord -> Envi
+setAttackingTrue entity env coord = let env2 = rmEntById (idn entity) env in
+                                      (setEntity (entity {attacking = True }) coord env2)
 
+prop_setAttackingTrue_pre :: Entite -> Envi -> Coord -> Bool
+prop_setAttackingTrue_pre entity env coord = prop_positiveCoord_inv coord
+                                                && prop_Entite_inv entity
+                                                && prop_Envi_inv env
+
+prop_setAttackingTrue_post :: Entite -> Envi -> Coord -> Bool
+prop_setAttackingTrue_post entity env coord = case trouveId (idn entity) env of
+        Just (co, en) -> (co == coord) && (attacking en)
+        _ -> False
+
+-- ces fonctions sont des fonctions auxiliaires de cleanUpEntities
 setAsNotAttacking :: Entite -> Entite
 setAsNotAttacking entity@(Coffre _ _ _) = entity 
 setAsNotAttacking entity = entity {attacking = False }
@@ -245,19 +261,49 @@ cleanAux entity = case entity of
         Monstre _ _ _ _ _-> ((pvie entity) > 0)
         _ -> True
 
-
+-- Enleve l'état d'attaque des entites et supprime toutes les entites mortes de l'environnement
 cleanUpEntities :: Envi -> Envi
 cleanUpEntities env = setAllAsNotAttacking (Envi (M.map (\ entities -> (filter cleanAux entities)) (contenu_envi env)))
 
+prop_cleanUpEntities_pre  :: Envi -> Bool
+prop_cleanUpEntities_pre env = prop_Envi_inv env
+
+prop_cleanUpEntities_post  :: Envi -> Bool
+prop_cleanUpEntities_post env = foldl (\boolAcc entity -> boolAcc && case entity of
+        Coffre _ _ _ -> True
+        _ -> ((pvie entity) > 0) && (not (attacking entity)))
+        True (listEntities env)
+
+
+-- Ouvre le coffre par son idn
 openChest :: Int -> Envi -> Envi
 openChest idChest env = case trouveId idChest env of
         Just (co,chest) -> setEntity (chest {open = True}) co (rmEntById idChest env)
         Nothing -> env
 
+pre_openChest_pre :: Int -> Envi -> Bool
+pre_openChest_pre id env = (id >= 0) && prop_Envi_inv env
+
+pre_openChest_post :: Int -> Envi -> Bool
+pre_openChest_post idChest env = case trouveId idChest env of
+        Just (_,chest) -> (open chest)
+        _ -> False
+
+-- Donne la cle au joueur
 giveKeyToPlayer :: Envi -> Envi
 giveKeyToPlayer env = case getPlayer env of
         Just (co,player) -> setEntity (player {hasKey = True}) co (rmEntById (idn player) env)
         Nothing -> env
+
+prop_giveKeyToPlayer_pre :: Envi -> Bool
+prop_giveKeyToPlayer_pre env = prop_Envi_inv env
+
+prop_giveKeyToPlayer_post :: Envi -> Bool
+prop_giveKeyToPlayer_post env = case getPlayerEntity env of
+        Just j@(Joueur _ _ _ _ _ _) -> (hasKey j)
+        _ -> False
+
+
 
 ---------------------INVARIANTS----------------------
 
@@ -270,7 +316,6 @@ giveKeyToPlayer env = case getPlayer env of
 -- X  vérifier que les mobs ont le droit d'être sur la case sur laquelle ils sont
 -- No qu'il n'y ait qu'un seul joueur
 
- 
 
 prop_allCoordsPositive_inv :: Envi -> Bool
 prop_allCoordsPositive_inv env = foldl (\boolAcc (co,_) -> boolAcc && (prop_positiveCoord_inv co)) True (listFromEnv env)

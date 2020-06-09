@@ -77,8 +77,8 @@ toStringCarteAux cartel (co, ca) = if (cx co) == (max 0 (cartel - 1)) then (strF
 
 
 instance ToString Carte where
-    toString c = "largeur = " ++ (show (cartel c)) ++
-                "\nhauteur = " ++ (show (carteh c)) ++ "\n" ++
+    toString c = -- "largeur = " ++ (show (cartel c)) ++
+                -- "\nhauteur = " ++ (show (carteh c)) ++ "\n" ++
                 foldl (\accstr cur -> accstr ++ (toStringCarteAux (cartel c) cur) ) "" (listFromCarte c)
 
 
@@ -206,6 +206,13 @@ prop_openDoor_post co carte = (\new_carte -> (noChangesExceptAtCoord carte co ne
 
 
 
+
+-- appelle la fonction permettant d'ouvrir une porte si la case fournie est une porte
+-- permet de respecter prop_openDoor_pre qui attend forcément une porte
+tryOpenDoor :: Coord -> Carte -> Carte
+tryOpenDoor coord carte = case getCase coord carte of
+    Just (Porte _ _) -> openDoor coord carte
+    _ -> carte
 
 
 
