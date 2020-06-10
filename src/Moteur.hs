@@ -51,7 +51,7 @@ etat_tour state kbd deltaT = case state of
     Tour _ _ _ -> let m = M.gameStep ((modele state) {M.envi = E.cleanUpEntities (M.envi (modele state))} ) kbd deltaT in
             if (E.getPlayerCoord (M.envi m)) == (C.getExitCoord (C.listFromCarte (M.carte m))) then Gagne
             else if (case (E.getPlayerEntity (M.envi m)) of
-                    Just player -> ((E.pvie player) <= 0)
+                    Just player -> ((E.pvie player) < 1)
                     Nothing -> False
                     ) then Perdu
             else state {num_tour = (num_tour state) + 1 , modele = m, journal_tour = (M.logs m)}
@@ -61,7 +61,8 @@ etat_tour state kbd deltaT = case state of
 
 ---------------------INVARIANTS----------------------
 
-        
+-- Vérifie que le nombre de tours est positif et que
+-- l'invariant du modele qu'il contient est bien valide
 prop_Etat_inv :: Etat -> Bool
 prop_Etat_inv state = case state of
         Tour num m j -> (num >= 0) && (M.prop_Modele_inv m) 

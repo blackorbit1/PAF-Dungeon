@@ -5,40 +5,24 @@ import Test.QuickCheck
 
 import Carte
 
--- test generique
-{-
-genTrucFree :: Gen Bool
-genTrucFree = do
-    lim <- choose (1, 100)  -- la limite initiale
-    return $ if 1 == lim
-             then Porte Ouvert NS
-             else Porte Fermee NS
 
-trucSpec = do
-  describe "Titre test" $ do
-    it "ce que ça fait" $
-      property prop_genTruc_inv
-
--- passe d'invariants à propriétés
-prop_genTruc_inv :: Property
-prop_genTruc_inv = forAll genTrucFree $ truc_inv
---                        Gen Truc      Bool
---  invariant : coord in bound
---  prop :      all coords in bound
-
--}
-
-
-
-
---allCoordsInBounds_inv :: Carte -> Bool
 
 genCarte :: Gen Carte
-genCarte = pure (read   "XXXXX\n\
-                        \XE  X\n\
-                        \X   X\n\
-                        \XS  X\n\
-                        \XXXXX"  )
+genCarte = pure (read   "XXXXXXXXXXXXXXX\n\
+                        \XE   /        X\n\
+                        \XX XXXXXX-X-X-X\n\
+                        \X  X   XX X X X\n\
+                        \X XX^XXXX X X X\n\
+                        \X XX X    X X X\n\
+                        \X      XXXX X X\n\
+                        \XXXXXXXX    o X\n\
+                        \X     X  X XX-X\n\
+                        \XXXXX-XXXXXX  X\n\
+                        \X     |  X    X\n\
+                        \X-XXXXX     XXX\n\
+                        \X  SXXX    XX X\n\
+                        \X   o | XX    X\n\
+                        \XXXXXXXXXXXXXXX")
 
 genCoord :: Gen Coord
 genCoord = do

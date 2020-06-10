@@ -59,6 +59,13 @@ loadMur rdr path tmap smap = do
   let smap' = SM.addSprite (SpriteId "mur") sprite smap
   return (tmap', smap')
 
+loadFissure :: Renderer-> FilePath -> TextureMap -> SpriteMap -> IO (TextureMap, SpriteMap)
+loadFissure rdr path tmap smap = do
+  tmap' <- TM.loadTexture rdr path (TextureId "fissure") tmap
+  let sprite = S.defaultScale $ S.addImage S.createEmptySprite $ S.createImage (TextureId "fissure") (S.mkArea 0 0 50 50)
+  let smap' = SM.addSprite (SpriteId "fissure") sprite smap
+  return (tmap', smap')
+
 loadSol :: Renderer-> FilePath -> TextureMap -> SpriteMap -> IO (TextureMap, SpriteMap)
 loadSol rdr path tmap smap = do
   tmap' <- TM.loadTexture rdr path (TextureId "sol") tmap
@@ -146,14 +153,14 @@ loadMonstreAttacking rdr path tmap smap = do
 loadWin :: Renderer-> FilePath -> TextureMap -> SpriteMap -> IO (TextureMap, SpriteMap)
 loadWin rdr path tmap smap = do
   tmap' <- TM.loadTexture rdr path (TextureId "gagne") tmap
-  let sprite = S.defaultScale $ S.addImage S.createEmptySprite $ S.createImage (TextureId "gagne") (S.mkArea 0 0 500 500)
+  let sprite = S.defaultScale $ S.addImage S.createEmptySprite $ S.createImage (TextureId "gagne") (S.mkArea 0 0 750 750)
   let smap' = SM.addSprite (SpriteId "gagne") sprite smap
   return (tmap', smap')
 
 loadLoose :: Renderer-> FilePath -> TextureMap -> SpriteMap -> IO (TextureMap, SpriteMap)
 loadLoose rdr path tmap smap = do
   tmap' <- TM.loadTexture rdr path (TextureId "perdu") tmap
-  let sprite = S.defaultScale $ S.addImage S.createEmptySprite $ S.createImage (TextureId "perdu") (S.mkArea 0 0 500 500)
+  let sprite = S.defaultScale $ S.addImage S.createEmptySprite $ S.createImage (TextureId "perdu") (S.mkArea 0 0 750 750)
   let smap' = SM.addSprite (SpriteId "perdu") sprite smap
   return (tmap', smap')
 
@@ -174,7 +181,7 @@ loadChestClosed rdr path tmap smap = do
 loadShadow :: Renderer-> FilePath -> TextureMap -> SpriteMap -> IO (TextureMap, SpriteMap)
 loadShadow rdr path tmap smap = do
   tmap' <- TM.loadTexture rdr path (TextureId "shadow") tmap
-  let sprite = S.defaultScale $ S.addImage S.createEmptySprite $ S.createImage (TextureId "shadow") (S.mkArea 0 0 1000 1000)
+  let sprite = S.defaultScale $ S.addImage S.createEmptySprite $ S.createImage (TextureId "shadow") (S.mkArea 0 0 1500 1500)
   let smap' = SM.addSprite (SpriteId "shadow") sprite smap
   return (tmap', smap')
   
@@ -184,11 +191,12 @@ loadShadow rdr path tmap smap = do
 main :: IO ()
 main = do
   initializeAll
-  window <- createWindow "PafDungeon" $ defaultWindow { windowInitialSize = V2 500 500 }
+  window <- createWindow "PafDungeon" $ defaultWindow { windowInitialSize = V2 750 750 }
   renderer <- createRenderer window (-1) defaultRenderer
 
 
   (tmap', smap') <- loadMur renderer "assets/mur.png" TM.createTextureMap SM.createSpriteMap
+  (tmap', smap') <- loadFissure renderer "assets/fissure.png" tmap' smap'
   (tmap', smap') <- loadSol renderer "assets/sol.png" tmap' smap'
   (tmap', smap') <- loadPorEOFer renderer "assets/porte_fermee_eo.png" tmap' smap'
   (tmap', smap') <- loadPorNSFer renderer "assets/porte_fermee_ns.png" tmap' smap'
@@ -280,6 +288,7 @@ gameLoop frameRate renderer tmap smap kbd state carte env = do
             case ca of
                   C.Normal              -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "sol") smap) x y)
                   C.Mur                 -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "mur") smap) x y)
+                  C.Fissure                 -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "fissure") smap) x y)
                   C.Porte NS Ouverte  -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "porte_ouverte_ns") smap) x y)
                   C.Porte NS Fermee   -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "porte_fermee_ns") smap) x y)
                   C.Porte EO Ouverte  -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "porte_ouverte_eo") smap) x y)
@@ -315,7 +324,7 @@ gameLoop frameRate renderer tmap smap kbd state carte env = do
             --_ -> return ()
 
 
-            (Just c) -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "shadow") smap) (fromIntegral ((50 * (cx c)) - 475)) (fromIntegral ((50 * (cy c)) - 475)) )
+            (Just c) -> S.displaySprite renderer tmap (S.moveTo (SM.fetchSprite (SpriteId "shadow") smap) (fromIntegral ((50 * (cx c)) - 725)) (fromIntegral ((50 * (cy c)) - 725)) )
             _ -> return ()
           
           --putStrLn position_perso

@@ -17,7 +17,7 @@ data StatutP = Ouverte | Fermee deriving (Eq, Show) -- statut d’une porte
 
 data Case = Normal -- une case vide
     | Porte PDirection StatutP -- une porte ouverte ou fermee
-    | Piege 
+    | Fissure 
     | Mur -- infranchissable (sauf pour les fantomes ...)
     | Entree -- debut du niveau
     | Sortie -- fin du niveau
@@ -93,7 +93,7 @@ caseFromChar caractere = case caractere of
     '-' -> Porte NS Fermee
     '/' -> Porte EO Ouverte
     '^' -> Porte NS Ouverte
-    'o' -> Piege
+    'o' -> Fissure
     'X' -> Mur
     'E' -> Entree
     'S' -> Sortie
@@ -107,7 +107,7 @@ strFromCase ca = case ca of
     Porte NS Fermee -> "-"
     Porte EO Ouverte -> "/"
     Porte NS Ouverte -> "^"
-    Piege -> "o"
+    Fissure -> "o"
     Mur -> "X"
     Entree -> "E"
     Sortie -> "S"
@@ -149,7 +149,7 @@ isTraversable ca clearanceLevel =
         Entree -> clearanceLevel >= 1
         Sortie -> clearanceLevel >= 1
         Porte _ Ouverte ->  clearanceLevel >= 10
-        Piege  ->           clearanceLevel >= 20
+        Fissure  ->           clearanceLevel >= 20
         Porte _ Fermee ->   clearanceLevel >= 30
         Mur -> clearanceLevel >= 40
 
@@ -234,26 +234,6 @@ prop_closeDoor_post co carte = (\new_carte -> (noChangesExceptAtCoord carte co n
     _ -> False )) (closeDoor co carte)
 
 
-
-
-{-
--- renvoie "e" si la case est une entrée, "s" si c'est une sortie et rien sinon
-getEntranceOrExit :: Case -> String
-getEntranceOrExit ca 
-    | ca == Entree = "e"
-    | ca == Sortie = "s"
-    | otherwise = ""
-
--- vérifie qu'une carte donnée ne contient 1 seule entrée et 1 seule sortie
-prop_entranceExit_inv :: Carte -> Bool
-prop_entranceExit_inv carte = case foldl (\strAcc (_,ca) -> strAcc ++ (getEntranceOrExit ca)) "" (listFromCarte carte) of
-    "es" -> True
-    "se" -> True
-    _ -> False
--}
-
-
-
 ---------------------INVARIANTS----------------------
 
 prop_positiveCoord_inv :: Coord -> Bool
@@ -325,14 +305,6 @@ caseFramedByWalls (co, ca) carte = case ca of
 prop_doorsFramedByWalls_inv :: Carte -> Bool
 prop_doorsFramedByWalls_inv carte = foldl (\boolAcc c -> boolAcc && caseFramedByWalls c carte ) True (listFromCarte carte)
 
-{-
-Idee pour savoir s'il y a un chemin entre l'entree et la sortie
-
-mydfs :: Grafe -> [Neud] -> [Neud] -> [Neud]
-mydfs graph visited [] = reverse visited
-mydfs graph visited (x:xs) | elem x visited = mydfs graph visited xs
-                           | otherwise = mydfs graph (x:visited) ((graph !! x) ++ xs)
--}
 
 -------
 

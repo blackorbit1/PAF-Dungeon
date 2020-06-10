@@ -64,7 +64,7 @@ prop_createEnvi_post env = prop_Envi_inv env  -- meme question que pour la post 
 -- Cree une Entite a partir d'un caractère
 entiteFromChar :: Char -> Int -> Entite
 entiteFromChar caractere idn = case caractere of
-    'J' -> Joueur idn 400 10 False False False
+    'J' -> Joueur idn 1500 10 False False False
     'M' -> Monstre idn 100 20 False False
     'C' -> Coffre idn True False
     'E' -> Coffre idn True False
@@ -182,7 +182,7 @@ removePvie :: Entite -> Int -> Entite           --ne sera jamais appele sur sur 
 removePvie ent deg = ent { pvie = (max ((pvie ent) - deg) 0 ) }
 
 prop_removePvie_pre :: Entite -> Int -> Bool
-prop_removePvie_pre ent deg = (deg >= 0) && (case ent of
+prop_removePvie_pre ent deg = (prop_Entite_inv ent) && (deg >= 0) && (case ent of
         Joueur _ _ _ _ _ _ -> True
         Monstre _ _ _ _ _ -> True
         _ -> False)
@@ -200,9 +200,11 @@ rmEntById idn env = case trouveId idn env of
                 )) (contenu_envi env))
         Nothing -> env
 
+-- Vérifie que l’id fourni est correcte et que l’entité à retirer se trouve bien dans l'environnement
 prop_rmEntById_pre :: Int -> Envi -> Bool 
 prop_rmEntById_pre idn env = (idn > 0) && ((trouveId idn env) /= Nothing )
 
+-- Vérifie que l’id fourni est correcte et que l’entité que l’on a retiré ne se trouve plus dans l'environnement'
 prop_rmEntById_post :: Int -> Envi -> Bool 
 prop_rmEntById_post idn env = (idn > 0) && ((trouveId idn env) == Nothing )
 
@@ -234,6 +236,7 @@ setAttackingTrue :: Entite -> Envi -> Coord -> Envi
 setAttackingTrue entity env coord = let env2 = rmEntById (idn entity) env in
                                       (setEntity (entity {attacking = True }) coord env2)
 
+-- vérifie que les invariants de tous les arguments de la fonction sont bien respectés.
 prop_setAttackingTrue_pre :: Entite -> Envi -> Coord -> Bool
 prop_setAttackingTrue_pre entity env coord = prop_positiveCoord_inv coord
                                                 && prop_Entite_inv entity
@@ -265,9 +268,12 @@ cleanAux entity = case entity of
 cleanUpEntities :: Envi -> Envi
 cleanUpEntities env = setAllAsNotAttacking (Envi (M.map (\ entities -> (filter cleanAux entities)) (contenu_envi env)))
 
+--  vérifie que les invariants de l’environnement à nettoyer sont bien respectés.
 prop_cleanUpEntities_pre  :: Envi -> Bool
 prop_cleanUpEntities_pre env = prop_Envi_inv env
 
+--vérifie qu’aucune entité qui peut attaquer n’est en mode attaque 
+-- (avant chaque tour on sort toutes les entités du mode attaque et celles qui attaqueront re-entreront en mode attaque).
 prop_cleanUpEntities_post  :: Envi -> Bool
 prop_cleanUpEntities_post env = foldl (\boolAcc entity -> boolAcc && case entity of
         Coffre _ _ _ -> True
@@ -281,9 +287,11 @@ openChest idChest env = case trouveId idChest env of
         Just (co,chest) -> setEntity (chest {open = True}) co (rmEntById idChest env)
         Nothing -> env
 
+-- vérifie que l’id fourni est valide et que les invariants de l’environnement sont bien valides.
 pre_openChest_pre :: Int -> Envi -> Bool
 pre_openChest_pre id env = (id >= 0) && prop_Envi_inv env
 
+-- vérifie que le coffre que l’on souhaitait ouvrir est désormais bien ouvert.
 pre_openChest_post :: Int -> Envi -> Bool
 pre_openChest_post idChest env = case trouveId idChest env of
         Just (_,chest) -> (open chest)
@@ -317,34 +325,36 @@ prop_giveKeyToPlayer_post env = case getPlayerEntity env of
 -- No qu'il n'y ait qu'un seul joueur
 
 
+-- Verifie que toutes les coordonnées sont positives
 prop_allCoordsPositive_inv :: Envi -> Bool
 prop_allCoordsPositive_inv env = foldl (\boolAcc (co,_) -> boolAcc && (prop_positiveCoord_inv co)) True (listFromEnv env)
 
-
+--Verifie qu'il n'y a qu'une entite infranchissable par case
 prop_oneUncrossableMobPerCase_inv :: Envi -> Bool
 prop_oneUncrossableMobPerCase_inv env = foldl (\boolAcc (co,_) -> boolAcc && (case (getEntitiesAtCoord co env) of
         Just entities -> if (foldl (\uncrossableAcc entity ->  uncrossableAcc + (if (isFranchissable entity) then 0 else 1)) 0 entities) <= 1 then True else False
         Nothing -> True
         )) True (listFromEnv env)
 
+--Verifie que les statistiques 
 prop_positiveStats_inv :: Envi -> Bool
 prop_positiveStats_inv env = foldl (\boolAcc entity -> boolAcc && prop_Entite_inv entity) True (listEntities env)
 
-
+--Verifie que l'environnement ne contient pas une autre entite avec le meme identifiant 
 hasUniqueId :: Entite -> Envi -> Bool
 hasUniqueId entity env = foldl (\boolAcc (co,_) -> boolAcc && (case (getEntitiesAtCoord co env) of
         Just entities -> foldl (\boolAcc2 entity2 -> boolAcc2 && if entity /= entity2 then (idn entity) /= (idn entity2) else True) True entities
         Nothing -> True
         )) True (listFromEnv env)
 
-
+--pas très efficace
 quadraticUniqueIds_inv ::  Envi -> Bool
 quadraticUniqueIds_inv env = foldl (\boolAcc (co,_) -> boolAcc && (case (getEntitiesAtCoord co env) of
         Just entities -> foldl (\boolAcc2 entity ->  boolAcc2 && hasUniqueId entity env) True entities
         Nothing -> True
         )) True (listFromEnv env)
 
-
+--Vérifie que toutes les entites de l'environnement ont un identifiant unique
 prop_uniqueIds_inv ::  Envi -> Bool
 prop_uniqueIds_inv env = (\(result, _) -> result) (foldl (\(boolAcc, seenIdn) (co,_) -> (case (getEntitiesAtCoord co env) of
                 Just entities -> (foldl (\(boolAcc2, seenIdn2) entity ->  ((boolAcc2 && ((idn entity) `notElem` seenIdn2)), (idn entity):seenIdn2)) (boolAcc, seenIdn) entities)
@@ -352,7 +362,7 @@ prop_uniqueIds_inv env = (\(result, _) -> result) (foldl (\(boolAcc, seenIdn) (c
                 )
         ) (True , []) (listFromEnv env)) 
 
-
+--Regroupe les invariants de l'environnement
 prop_Envi_inv :: Envi -> Bool
 prop_Envi_inv env = (prop_allCoordsPositive_inv env)
                  && (prop_oneUncrossableMobPerCase_inv env)
@@ -360,7 +370,7 @@ prop_Envi_inv env = (prop_allCoordsPositive_inv env)
                  && (prop_uniqueIds_inv env)
                  && (foldl (\boolAcc entity -> boolAcc && (prop_Entite_inv entity)) True (listEntities env))
 
-
+--Vérifie les statistiques en fonction du type d'entite
 prop_Entite_inv :: Entite -> Bool
 prop_Entite_inv entity =   case entity of
         Coffre _ _ _ -> (idn entity) >= 0

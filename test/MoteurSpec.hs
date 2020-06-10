@@ -9,30 +9,40 @@ import Modele
 import Moteur
 
 
-genCarte :: Gen Carte
-genCarte = pure (read   "XXXXX\n\
-                        \XE  X\n\
-                        \X   X\n\
-                        \XS  X\n\
-                        \XXXXX"  )
-
-
-genEnv :: Gen Envi
-genEnv = pure (setEntity (entiteFromChar 'M' 1) (Coord 2 1) (setEntity (entiteFromChar 'J' 0) (Coord 1 1) (createEnvi (read   "XXXXX\n\
-                        \XE  X\n\
-                        \X   X\n\
-                        \XS  X\n\
-                        \XXXXX"  ) "")))
 
 genMoteur :: Gen Etat
 genMoteur = do
-    let carteTxt =  "XXXXX\n\
-                    \XE  X\n\
-                    \X   X\n\
-                    \XS  X\n\
-                    \XXXXX"
+    let carteTxt =      "XXXXXXXXXXXXXXX\n\
+                        \XE   /        X\n\
+                        \XX XXXXXX-X-X-X\n\
+                        \X  X   XX X X X\n\
+                        \X XX^XXXX X X X\n\
+                        \X XX X    X X X\n\
+                        \X      XXXX X X\n\
+                        \XXXXXXXX    o X\n\
+                        \X     X  X XX-X\n\
+                        \XXXXX-XXXXXX  X\n\
+                        \X     |  X    X\n\
+                        \X-XXXXX     XXX\n\
+                        \X  SXXX    XX X\n\
+                        \X   o | XX    X\n\
+                        \XXXXXXXXXXXXXXX"
 
-    let mobTxt = ""
+
+    let mobTxt =  "               \n\
+                  \ J             \n\
+                  \               \n\
+                  \     MC        \n\
+                  \               \n\
+                  \         M     \n\  
+                  \             M \n\
+                  \         M     \n\
+                  \ M             \n\
+                  \               \n\
+                  \               \n\
+                  \               \n\
+                  \               \n\
+                  \ M           M "
 
     let carte = createCarte carteTxt
     let env = createEnvi carte mobTxt
@@ -40,7 +50,7 @@ genMoteur = do
     pure (Tour 0 (initModele carte env) "")
 
 moteurMoteurSpec = do
-  describe "Modele ---------> ALL MOTEUR INVARIANTS" $ do
+  describe "Moteur ---------> ALL MOTEUR INVARIANTS" $ do
     it "verifie que tous les invariants du moteur sont respectés" $
       property prop_moteurMoteur_inv
 

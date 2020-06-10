@@ -8,19 +8,52 @@ import Environnement
 
 
 genCarte :: Gen Carte
-genCarte = pure (read   "XXXXX\n\
-                        \XE  X\n\
-                        \X   X\n\
-                        \XS  X\n\
-                        \XXXXX"  )
+genCarte = pure (read   "XXXXXXXXXXXXXXX\n\
+                        \XE   /        X\n\
+                        \XX XXXXXX-X-X-X\n\
+                        \X  X   XX X X X\n\
+                        \X XX^XXXX X X X\n\
+                        \X XX X    X X X\n\
+                        \X      XXXX X X\n\
+                        \XXXXXXXX    o X\n\
+                        \X     X  X XX-X\n\
+                        \XXXXX-XXXXXX  X\n\
+                        \X     |  X    X\n\
+                        \X-XXXXX     XXX\n\
+                        \X  SXXX    XX X\n\
+                        \X   o | XX    X\n\
+                        \XXXXXXXXXXXXXXX")
 
 
 genEnv :: Gen Envi
-genEnv = pure (setEntity (entiteFromChar 'M' 1) (Coord 2 1) (setEntity (entiteFromChar 'J' 0) (Coord 1 1) (createEnvi (read   "XXXXX\n\
-                        \XE  X\n\
-                        \X   X\n\
-                        \XS  X\n\
-                        \XXXXX"  ) "")))
+genEnv = pure (createEnvi (read   "XXXXXXXXXXXXXXX\n\
+                                  \XE   /        X\n\
+                                  \XX XXXXXX-X-X-X\n\
+                                  \X  X   XX X X X\n\
+                                  \X XX^XXXX X X X\n\
+                                  \X XX X    X X X\n\
+                                  \X      XXXX X X\n\
+                                  \XXXXXXXX    o X\n\
+                                  \X     X  X XX-X\n\
+                                  \XXXXX-XXXXXX  X\n\
+                                  \X     |  X    X\n\
+                                  \X-XXXXX     XXX\n\
+                                  \X  SXXX    XX X\n\
+                                  \X   o | XX    X\n\
+                                  \XXXXXXXXXXXXXXX")  "               \n\
+                                                      \ J             \n\
+                                                      \               \n\
+                                                      \     MC        \n\
+                                                      \               \n\
+                                                      \         M     \n\  
+                                                      \             M \n\
+                                                      \         M     \n\
+                                                      \ M             \n\
+                                                      \               \n\
+                                                      \               \n\
+                                                      \               \n\
+                                                      \               \n\
+                                                      \ M           M ")
 
 
 environnementAllCoordsPositiveSpec = do

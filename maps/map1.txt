@@ -1,10 +1,15 @@
-XXXXXXXXXX
-XE   /   X
-X  XXXX  X
-X  X   X X
-X  XXX^X X
-X X-X    X
-X      X X
-XXXXXXXX X
-XS  |    X
-XXXXXXXXXX
+XXXXXXXXXXXXXXX
+XE   /        X
+XX XXXXXX-X-X-X
+X  X   XX X X X
+X XX^XXXX X X X
+X XX X    X X X
+X      XXXX X X
+XXXXXXXX    o X
+X     X  X XX-X
+XXXXX-XXXXXX  X
+X     |  X    X
+X-XXXXX     XXX
+X  SXXX    XX X
+X   o | XX    X
+XXXXXXXXXXXXXXX

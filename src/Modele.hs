@@ -88,7 +88,7 @@ prevoir :: Entite -> Envi -> [(Int,Ordre)]
 prevoir entity env = case entity of
   E.Monstre _ _ _ _ _ -> if (
       case (E.getPlayerCoord env, E.entityCoord entity env) of
-        (Just coP, Just coM) -> ((abs ((C.cx coP) - (C.cx coM))) <= 2) && ((abs ((C.cy coP) - (C.cy coM))) <= 1)
+        (Just coP, Just coM) -> ((abs ((C.cx coP) - (C.cx coM))) <= 2) && ((abs ((C.cy coP) - (C.cy coM))) <= 2)
         (_, _) -> False )
     then [(1, Haut ),(1, Bas ),(1, Droite ),(1, Gauche ), (2, Rien ), (0, Uti ), (8, Atk )]
     else [(1, Haut ),(1, Bas ),(1, Droite ),(1, Gauche ), (2, Rien ), (0, Uti ), (0, Atk )]
