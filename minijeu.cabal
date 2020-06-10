@@ -4,26 +4,16 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: ab132d139fff075eb0f92b8c926b5c5a335ece9f2290ad22a426d1e5f7f9926e
+-- hash: 621d1103746beeb2b72dfd3fdb835c8e731b2fbb7756499ac14b762867a097c5
 
 name:           minijeu
 version:        0.1.0.0
-description:    Please see the README on GitHub at <https://github.com/githubuser/minijeu#readme>
-homepage:       https://github.com/githubuser/minijeu#readme
-bug-reports:    https://github.com/githubuser/minijeu/issues
-author:         Author name here
-maintainer:     example@example.com
-copyright:      2020 Author name here
 license:        BSD3
 license-file:   LICENSE
 build-type:     Simple
 extra-source-files:
     README.md
     ChangeLog.md
-
-source-repository head
-  type: git
-  location: https://github.com/githubuser/minijeu
 
 library
   exposed-modules:
